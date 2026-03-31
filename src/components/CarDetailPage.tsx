@@ -5,32 +5,32 @@ import { ResizeMode, Video } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Dimensions,
-    Image,
-    LayoutChangeEvent,
-    Linking,
-    Modal,
-    NativeScrollEvent,
-    NativeSyntheticEvent,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  LayoutChangeEvent,
+  Linking,
+  Modal,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import {
-    FlatList, Gesture,
-    GestureDetector,
-    GestureHandlerRootView,
-    Pressable
+  FlatList, Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+  Pressable
 } from 'react-native-gesture-handler';
 import Animated, {
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
 
 import { useAlert } from '../context/AlertContext';
@@ -46,7 +46,7 @@ type CarDetailNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Ca
 const { width, height } = Dimensions.get('window');
 const STORAGE_BASE_URL = 'https://api.caartl.com/storage/';
 const TAB_BAR_HEIGHT = 60;
-const WHATSAPP_NUMBER = '923094174580';
+const WHATSAPP_NUMBER = '971521706875';
 
 // ==========================================
 // 1. ZOOMABLE IMAGE
@@ -171,9 +171,9 @@ const ImagePreviewModal = ({ visible, images = [], initialIndex = 0, onClose, is
     <Modal visible={visible} transparent={true} onRequestClose={onClose} animationType="fade">
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={[styles.previewContainer, isWhiteBackground && styles.previewContainerWhite]}>
-          <TouchableOpacity 
-            style={styles.previewCloseBtn} 
-            onPress={onClose} 
+          <TouchableOpacity
+            style={styles.previewCloseBtn}
+            onPress={onClose}
             hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
             zIndex={20}
           >
@@ -186,16 +186,16 @@ const ImagePreviewModal = ({ visible, images = [], initialIndex = 0, onClose, is
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            scrollEnabled={scrollEnabled} 
+            scrollEnabled={scrollEnabled}
             keyExtractor={(_, index) => index.toString()}
             onMomentumScrollEnd={onScroll}
             getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
             initialScrollIndex={initialIndex}
-            waitFor={scrollEnabled ? undefined : undefined} 
+            waitFor={scrollEnabled ? undefined : undefined}
             renderItem={({ item }) => (
               <View style={{ width: width, height: height, justifyContent: 'center' }}>
-                <ZoomableImage 
-                  uri={item} 
+                <ZoomableImage
+                  uri={item}
                   onRequestScrollToggle={handleScrollToggle}
                 />
               </View>
@@ -317,7 +317,7 @@ export const CarDetailPage = () => {
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [isPreviewMap, setIsPreviewMap] = useState(false);
-  
+
   const [videoModalVisible, setVideoModalVisible] = useState(false);
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
 
@@ -328,7 +328,7 @@ export const CarDetailPage = () => {
   const [inqPhone, setInqPhone] = useState('');
   const [inqAddress, setInqAddress] = useState('');
   const [inqComment, setInqComment] = useState('');
-  
+
   const [submittingInquiry, setSubmittingInquiry] = useState(false);
 
   // Scroll
@@ -466,18 +466,18 @@ ${inqComment}`;
 
     const url = `whatsapp://send?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`;
     try {
-        const supported = await Linking.canOpenURL(url);
-        if (supported) {
-            await Linking.openURL(url);
-            setInquireVisible(false); 
-        } else {
-            showAlert("Error", "WhatsApp is not installed on this device.");
-        }
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+        setInquireVisible(false);
+      } else {
+        showAlert("Error", "WhatsApp is not installed on this device.");
+      }
     } catch (error) {
-        console.error("WhatsApp Error", error);
-        showAlert("Error", "Could not open WhatsApp.");
+      console.error("WhatsApp Error", error);
+      showAlert("Error", "Could not open WhatsApp.");
     } finally {
-        setSubmittingInquiry(false);
+      setSubmittingInquiry(false);
     }
   };
 
@@ -532,7 +532,7 @@ ${inqComment}`;
       { label: 'Engine CC', value: v.engine_cc },
       { label: 'No. of Cylinders', value: v.no_of_cylinder },
       { label: 'Horsepower (in BHP)', value: v.horsepower },
-      { label: 'Body Type', value: val(i?.body_type || v.body_type_id === 1 ? 'Sports' : 'Sedan') }, 
+      { label: 'Body Type', value: val(i?.body_type || v.body_type_id === 1 ? 'Sports' : 'Sedan') },
       { label: 'Specs', value: val(v.specs || i?.specs) },
       { label: 'Transmission Type', value: val(i?.transmission || (v.transmission_id === 1 ? 'Automatic' : 'Manual')) },
       { label: 'Color', value: val(i?.color || v.color), media: getFieldMedia('color') },
@@ -546,75 +546,75 @@ ${inqComment}`;
   // 🟢 Inspection Sections Memo
   const inspectionSections = useMemo(() => {
     if (!latestInspection) return [];
-    
+
     const i = latestInspection;
     const getVal = (key: string) => i[key] || "N/A";
     const getArr = (key: string) => Array.isArray(i[key]) && i[key].length > 0 ? i[key].join(", ") : "No visible fault";
-    
+
     const getColor = (val: string) => {
-        const v = String(val).toLowerCase();
-        if (v.includes('no leak') || v.includes('no visible') || v.includes('available') || v.includes('original') || v.includes('good')) return '#cadb2a';
-        if (v.includes('minor') || v.includes('moderate')) return '#ffaa00';
-        if (v.includes('worn') || v.includes('major') || v.includes('severe') || v.includes('fail')) return '#ff4444';
-        return '#fff'; 
+      const v = String(val).toLowerCase();
+      if (v.includes('no leak') || v.includes('no visible') || v.includes('available') || v.includes('original') || v.includes('good')) return '#cadb2a';
+      if (v.includes('minor') || v.includes('moderate')) return '#ffaa00';
+      if (v.includes('worn') || v.includes('major') || v.includes('severe') || v.includes('fail')) return '#ff4444';
+      return '#fff';
     };
 
     return [
-        {
-            title: "Engine & Transmission",
-            rows: [
-                [{ label: "Engine Oil", value: getVal('engineOil') }, { label: "Gear Oil", value: getVal('gearOil') }],
-                [{ label: "Engine Noise", value: getVal('engineNoise') }, { label: "Engine Smoke", value: getVal('engineSmoke') }],
-                [{ label: "Gear Shifting", value: getVal('gearshifting') }, { label: "4WD System", value: getVal('fourWdSystemCondition') }],
-            ],
-            comment: i.remarks || "No remarks."
-        },
-        {
-            title: "Steering, Suspension & Brakes",
-            rows: [
-                [{ label: "Brake Pads", value: getVal('brakePads') }, { label: "Brake Discs", value: getArr('brakeDiscs') }],
-                [{ label: "Suspension", value: getVal('suspension') }, { label: "Shock Absorber", value: getArr('shockAbsorberOperation') }],
-                [{ label: "Steering Operation", value: getVal('steeringOperation') }, { label: "Wheel Alignment", value: getVal('wheelAlignment') }],
-            ],
-            comment: i.comment_section1 || "No remarks."
-        },
-        {
-            title: "Wheel & Tyre",
-            rows: [
-                [{ label: "Spare Tire", value: getVal('spareTire') }, { label: "Front Left Tire", value: getVal('frontLeftTire') }],
-                [{ label: "Front Right Tire", value: getVal('frontRightTire') }, { label: "Rear Left Tire", value: getVal('rearLeftTire') }],
-                [{ label: "Rear Right Tire", value: getVal('rearRightTire') }, { label: "Tire Size", value: getVal('tiresSize') }],
-                [{ label: "Wheels Type", value: getVal('wheelsType') }, { label: "Front Rim Size", value: getVal('rimsSizeFront') }],
-                [{ label: "Rear Rim Size", value: getVal('rimsSizeRear') }, { label: "", value: "" }],
-            ],
-            comment: i.commentTire || "No remarks."
-        },
-        {
-            title: "Interior & Electricals",
-            rows: [
-                [{ label: "Speedometer Cluster", value: getVal('speedmeterCluster') }, { label: "Head Lining", value: getVal('headLining') }],
-                [{ label: "Seat Controls", value: getVal('seatControls') }, { label: "Central Lock", value: getVal('centralLockOperation') }],
-                [{ label: "Windows Control", value: getVal('windowsControl') }, { label: "Cruise Control", value: getVal('cruiseControl') }],
-                [{ label: "Sunroof Condition", value: getVal('sunroofCondition') }, { label: "AC Cooling", value: getVal('acCooling') }],
-                [{ label: "Seats Material", value: getVal('seats') }, { label: "Cooled Seats", value: getVal('cooledSeats') }],
-                [{ label: "Heated Seats", value: getVal('heatedSeats') }, { label: "Power Seats", value: getVal('powerSeats') }],
-            ],
-            comment: i.comment_section2 || "No remarks."
-        },
-        {
-            title: "Car Specs",
-            rows: [
-                [{ label: "Parking Sensors", value: getVal('parkingSensors') }, { label: "Keyless Start", value: getVal('keylessStart') }],
-                [{ label: "360 Camera", value: getVal('viveCamera') }, { label: "Blind Spot Monitor", value: getVal('blindSpot') }],
-                [{ label: "Sunroof Type", value: getVal('sunroofType') }, { label: "Heads-Up Display", value: getVal('headsDisplay') }],
-                [{ label: "Premium Sound System", value: getVal('premiumSound') }, { label: "Carbon Fiber Interior", value: getVal('carbonFiber') }],
-                [{ label: "Side Steps", value: getVal('sideSteps') }, { label: "Convertible Top", value: getVal('convertible') }],
-            ],
-            paintCondition: i.paintCondition || []
-        }
+      {
+        title: "Engine & Transmission",
+        rows: [
+          [{ label: "Engine Oil", value: getVal('engineOil') }, { label: "Gear Oil", value: getVal('gearOil') }],
+          [{ label: "Engine Noise", value: getVal('engineNoise') }, { label: "Engine Smoke", value: getVal('engineSmoke') }],
+          [{ label: "Gear Shifting", value: getVal('gearshifting') }, { label: "4WD System", value: getVal('fourWdSystemCondition') }],
+        ],
+        comment: i.remarks || "No remarks."
+      },
+      {
+        title: "Steering, Suspension & Brakes",
+        rows: [
+          [{ label: "Brake Pads", value: getVal('brakePads') }, { label: "Brake Discs", value: getArr('brakeDiscs') }],
+          [{ label: "Suspension", value: getVal('suspension') }, { label: "Shock Absorber", value: getArr('shockAbsorberOperation') }],
+          [{ label: "Steering Operation", value: getVal('steeringOperation') }, { label: "Wheel Alignment", value: getVal('wheelAlignment') }],
+        ],
+        comment: i.comment_section1 || "No remarks."
+      },
+      {
+        title: "Wheel & Tyre",
+        rows: [
+          [{ label: "Spare Tire", value: getVal('spareTire') }, { label: "Front Left Tire", value: getVal('frontLeftTire') }],
+          [{ label: "Front Right Tire", value: getVal('frontRightTire') }, { label: "Rear Left Tire", value: getVal('rearLeftTire') }],
+          [{ label: "Rear Right Tire", value: getVal('rearRightTire') }, { label: "Tire Size", value: getVal('tiresSize') }],
+          [{ label: "Wheels Type", value: getVal('wheelsType') }, { label: "Front Rim Size", value: getVal('rimsSizeFront') }],
+          [{ label: "Rear Rim Size", value: getVal('rimsSizeRear') }, { label: "", value: "" }],
+        ],
+        comment: i.commentTire || "No remarks."
+      },
+      {
+        title: "Interior & Electricals",
+        rows: [
+          [{ label: "Speedometer Cluster", value: getVal('speedmeterCluster') }, { label: "Head Lining", value: getVal('headLining') }],
+          [{ label: "Seat Controls", value: getVal('seatControls') }, { label: "Central Lock", value: getVal('centralLockOperation') }],
+          [{ label: "Windows Control", value: getVal('windowsControl') }, { label: "Cruise Control", value: getVal('cruiseControl') }],
+          [{ label: "Sunroof Condition", value: getVal('sunroofCondition') }, { label: "AC Cooling", value: getVal('acCooling') }],
+          [{ label: "Seats Material", value: getVal('seats') }, { label: "Cooled Seats", value: getVal('cooledSeats') }],
+          [{ label: "Heated Seats", value: getVal('heatedSeats') }, { label: "Power Seats", value: getVal('powerSeats') }],
+        ],
+        comment: i.comment_section2 || "No remarks."
+      },
+      {
+        title: "Car Specs",
+        rows: [
+          [{ label: "Parking Sensors", value: getVal('parkingSensors') }, { label: "Keyless Start", value: getVal('keylessStart') }],
+          [{ label: "360 Camera", value: getVal('viveCamera') }, { label: "Blind Spot Monitor", value: getVal('blindSpot') }],
+          [{ label: "Sunroof Type", value: getVal('sunroofType') }, { label: "Heads-Up Display", value: getVal('headsDisplay') }],
+          [{ label: "Premium Sound System", value: getVal('premiumSound') }, { label: "Carbon Fiber Interior", value: getVal('carbonFiber') }],
+          [{ label: "Side Steps", value: getVal('sideSteps') }, { label: "Convertible Top", value: getVal('convertible') }],
+        ],
+        paintCondition: i.paintCondition || []
+      }
     ].map(section => ({
-        ...section,
-        rows: section.rows.map(row => row.map(cell => ({ ...cell, color: getColor(cell.value) })))
+      ...section,
+      rows: section.rows.map(row => row.map(cell => ({ ...cell, color: getColor(cell.value) })))
     }));
 
   }, [latestInspection]);
@@ -713,20 +713,20 @@ ${inqComment}`;
 
             {/* Status Card */}
             {bookingStatus !== 'none' && (
-                <View style={styles.statusCard}>
-                    <Feather 
-                        name={bookingStatus === 'pending_payment' ? 'clock' : (bookingStatus === 'intransfer' ? 'truck' : 'check-circle')} 
-                        size={40} 
-                        color={bookingStatus === 'pending_payment' ? '#ffaa00' : (bookingStatus === 'intransfer' ? '#00a8ff' : '#cadb2a')} 
-                        style={{ marginBottom: 10 }} 
-                    />
-                    <Text style={styles.statusTitle}>
-                        {bookingStatus === 'pending_payment' ? 'Payment Pending' : (bookingStatus === 'intransfer' ? 'Vehicle In-Transfer' : 'Vehicle Delivered')}
-                    </Text>
-                    <Text style={styles.statusSubText}>
-                        {bookingStatus === 'pending_payment' ? 'Complete payment to confirm your booking.' : (bookingStatus === 'intransfer' ? 'Your vehicle is currently being transferred.' : 'Your vehicle has been successfully delivered.')}
-                    </Text>
-                </View>
+              <View style={styles.statusCard}>
+                <Feather
+                  name={bookingStatus === 'pending_payment' ? 'clock' : (bookingStatus === 'intransfer' ? 'truck' : 'check-circle')}
+                  size={40}
+                  color={bookingStatus === 'pending_payment' ? '#ffaa00' : (bookingStatus === 'intransfer' ? '#00a8ff' : '#cadb2a')}
+                  style={{ marginBottom: 10 }}
+                />
+                <Text style={styles.statusTitle}>
+                  {bookingStatus === 'pending_payment' ? 'Payment Pending' : (bookingStatus === 'intransfer' ? 'Vehicle In-Transfer' : 'Vehicle Delivered')}
+                </Text>
+                <Text style={styles.statusSubText}>
+                  {bookingStatus === 'pending_payment' ? 'Complete payment to confirm your booking.' : (bookingStatus === 'intransfer' ? 'Your vehicle is currently being transferred.' : 'Your vehicle has been successfully delivered.')}
+                </Text>
+              </View>
             )}
           </View>
 
@@ -750,24 +750,24 @@ ${inqComment}`;
           {/* 🟢 Car Details Section (Renamed & Grid) */}
           <View onLayout={(e) => handleLayout(e, 'Car Details')} style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>Car Details</Text>
-            
+
             <View style={styles.carDetailsGrid}>
               {carDetailItems.map((item, idx) => (
                 <View key={idx} style={[styles.carDetailItem, item.fullWidth && { width: '100%' }]}>
                   <Text style={styles.carDetailLabel}>{item.label}</Text>
                   <View style={styles.carDetailValueRow}>
                     <Text style={styles.carDetailValue}>{item.value || 'N/A'}</Text>
-                    
+
                     {item.media && (
                       <TouchableOpacity
                         onPress={() => {
                           const path = item.media.path.startsWith('http') ? item.media.path : `${STORAGE_BASE_URL}${item.media.path}`;
                           if (item.media.file_type === 'video') handleVideoOpen(path);
-                          else handleImageOpen([path], 0, false); 
+                          else handleImageOpen([path], 0, false);
                         }}
                         style={{ marginLeft: 8 }}
                       >
-                         <Feather name="camera" size={16} color="#00a8ff" />
+                        <Feather name="camera" size={16} color="#00a8ff" />
                       </TouchableOpacity>
                     )}
                   </View>
@@ -779,28 +779,28 @@ ${inqComment}`;
           {/* 🟢 Damage Map Section (With Toggle) */}
           {latestInspection?.damage_file_path && (
             <View style={styles.sectionContainer}>
-               <View style={styles.featureHeader}>
+              <View style={styles.featureHeader}>
                 <View>
-                   <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Damage Assessment</Text>
-                   <Text style={{color: '#888', fontSize: 12}}>({latestInspection.damages?.length || 0} Points)</Text>
+                  <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Damage Assessment</Text>
+                  <Text style={{ color: '#888', fontSize: 12 }}>({latestInspection.damages?.length || 0} Points)</Text>
                 </View>
-                
+
                 {/* Checkbox Toggle */}
-                <TouchableOpacity 
-                   style={{flexDirection: 'row', alignItems: 'center'}} 
-                   onPress={() => setShowFaultsList(!showFaultsList)}
+                <TouchableOpacity
+                  style={{ flexDirection: 'row', alignItems: 'center' }}
+                  onPress={() => setShowFaultsList(!showFaultsList)}
                 >
-                   <Feather name={showFaultsList ? "check-square" : "square"} size={18} color="#cadb2a" />
-                   <Text style={{color: '#ccc', marginLeft: 8, fontSize: 12, fontFamily: 'Poppins'}}>View Faults List</Text>
+                  <Feather name={showFaultsList ? "check-square" : "square"} size={18} color="#cadb2a" />
+                  <Text style={{ color: '#ccc', marginLeft: 8, fontSize: 12, fontFamily: 'Poppins' }}>View Faults List</Text>
                 </TouchableOpacity>
               </View>
-              
-              <Text style={{color:'#666', fontSize:11, marginBottom: 10}}>Interactive damage visualization</Text>
+
+              <Text style={{ color: '#666', fontSize: 11, marginBottom: 10 }}>Interactive damage visualization</Text>
 
               <TouchableOpacity onPress={() => handleImageOpen([latestInspection.damage_file_path], 0, true)} style={styles.damageMapContainer}>
                 <Image source={{ uri: latestInspection.damage_file_path }} style={styles.damageMapImage} resizeMode="contain" />
               </TouchableOpacity>
-              
+
               {/* Conditional List based on Checkbox */}
               {showFaultsList && latestInspection.damages && latestInspection.damages.length > 0 && (
                 <View style={{ marginTop: 15 }}>
@@ -843,57 +843,57 @@ ${inqComment}`;
             <View onLayout={(e) => handleLayout(e, 'Inspection')} style={styles.sectionContainer}>
               {/* 🟢 Inspection Report Accordions (New Layout) */}
               {inspectionSections.map((section, index) => (
-                <InspectionAccordion 
-                    key={index} 
-                    title={section.title} 
-                    isOpen={activeAccordion === section.title} 
-                    onPress={() => setActiveAccordion(activeAccordion === section.title ? null : section.title)}
+                <InspectionAccordion
+                  key={index}
+                  title={section.title}
+                  isOpen={activeAccordion === section.title}
+                  onPress={() => setActiveAccordion(activeAccordion === section.title ? null : section.title)}
                 >
-                    {section.rows.map((row, rIdx) => (
-                        <View key={rIdx} style={styles.inspGridRow}>
-                            {row.map((cell, cIdx) => (
-                                <View key={cIdx} style={styles.inspGridItem}>
-                                    <Text style={styles.inspLabel}>{cell.label}</Text>
-                                    <Text style={[styles.inspValue, { color: cell.color }]}>{cell.value}</Text>
-                                </View>
-                            ))}
+                  {section.rows.map((row, rIdx) => (
+                    <View key={rIdx} style={styles.inspGridRow}>
+                      {row.map((cell, cIdx) => (
+                        <View key={cIdx} style={styles.inspGridItem}>
+                          <Text style={styles.inspLabel}>{cell.label}</Text>
+                          <Text style={[styles.inspValue, { color: cell.color }]}>{cell.value}</Text>
                         </View>
-                    ))}
-                    
-                    {/* Paint Condition for Car Specs */}
-                    {/* @ts-ignore */}
-                    {section.paintCondition && section.paintCondition.length > 0 && (
-                        <View style={{ marginTop: 10 }}>
-                             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
-                                <Text style={styles.inspLabel}>Paint Condition</Text>
-                             </View>
-                             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
-                                {/* @ts-ignore */}
-                                {section.paintCondition.map((pc: string, i: number) => {
-                                    const { backgroundColor, label } = getPaintBadgeColor(pc);
-                                    return <View key={i} style={[styles.tag, { backgroundColor }]}><Text style={[styles.tagText, { color: '#fff', fontWeight: 'bold' }]}>{label}</Text></View>;
-                                })}
-                             </View>
-                        </View>
-                    )}
+                      ))}
+                    </View>
+                  ))}
 
-                    {section.comment && (
-                        <View style={styles.inspCommentBox}>
-                            <Text style={styles.inspCommentLabel}>Comments:</Text>
-                            <Text style={styles.inspCommentText}>{section.comment}</Text>
-                        </View>
-                    )}
+                  {/* Paint Condition for Car Specs */}
+                  {/* @ts-ignore */}
+                  {section.paintCondition && section.paintCondition.length > 0 && (
+                    <View style={{ marginTop: 10 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+                        <Text style={styles.inspLabel}>Paint Condition</Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
+                        {/* @ts-ignore */}
+                        {section.paintCondition.map((pc: string, i: number) => {
+                          const { backgroundColor, label } = getPaintBadgeColor(pc);
+                          return <View key={i} style={[styles.tag, { backgroundColor }]}><Text style={[styles.tagText, { color: '#fff', fontWeight: 'bold' }]}>{label}</Text></View>;
+                        })}
+                      </View>
+                    </View>
+                  )}
+
+                  {section.comment && (
+                    <View style={styles.inspCommentBox}>
+                      <Text style={styles.inspCommentLabel}>Comments:</Text>
+                      <Text style={styles.inspCommentText}>{section.comment}</Text>
+                    </View>
+                  )}
                 </InspectionAccordion>
               ))}
 
               {/* 🟢 Final Conclusion (Improved Styling) */}
               {latestInspection.final_conclusion ? (
                 <View style={styles.finalConclusionContainer}>
-                    <View style={styles.finalConclusionHeader}>
-                        <MaterialCommunityIcons name="clipboard-check-outline" size={20} color="#000" />
-                        <Text style={styles.finalConclusionTitle}>FINAL CONCLUSION</Text>
-                    </View>
-                    <Text style={styles.finalConclusionText}>{latestInspection.final_conclusion}</Text>
+                  <View style={styles.finalConclusionHeader}>
+                    <MaterialCommunityIcons name="clipboard-check-outline" size={20} color="#000" />
+                    <Text style={styles.finalConclusionTitle}>FINAL CONCLUSION</Text>
+                  </View>
+                  <Text style={styles.finalConclusionText}>{latestInspection.final_conclusion}</Text>
                 </View>
               ) : null}
 
@@ -903,13 +903,13 @@ ${inqComment}`;
           {/* 🟢 Remarks Section (Renamed & Styled) */}
           <View onLayout={(e) => handleLayout(e, 'Remarks')} style={styles.sectionContainer}>
             <View style={styles.sectionHeaderRow}>
-                 <View style={styles.sectionIconBadge}>
-                    <Feather name="message-square" size={16} color="#000" />
-                 </View>
-                 <Text style={styles.sectionTitleNew}>Remarks</Text>
+              <View style={styles.sectionIconBadge}>
+                <Feather name="message-square" size={16} color="#000" />
+              </View>
+              <Text style={styles.sectionTitleNew}>Remarks</Text>
             </View>
             <View style={styles.remarksContainer}>
-                <Text style={styles.remarksText}>{vehicle.remarks || "No remarks."}</Text>
+              <Text style={styles.remarksText}>{vehicle.remarks || "No remarks."}</Text>
             </View>
           </View>
 
@@ -983,12 +983,12 @@ ${inqComment}`;
                 <TextInput style={styles.input} value={inqAddress} onChangeText={setInqAddress} placeholderTextColor="#666" placeholder="Your Address" />
 
                 <Text style={styles.label}>Comment (Optional)</Text>
-                <TextInput 
-                  style={[styles.input, { height: 80, textAlignVertical: 'top' }]} 
-                  value={inqComment} 
-                  onChangeText={setInqComment} 
-                  placeholderTextColor="#666" 
-                  placeholder="Any questions?" 
+                <TextInput
+                  style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
+                  value={inqComment}
+                  onChangeText={setInqComment}
+                  placeholderTextColor="#666"
+                  placeholder="Any questions?"
                   multiline
                 />
 
@@ -1047,13 +1047,13 @@ const styles = StyleSheet.create({
   bannerPriceLabel: { color: '#aaa', fontSize: 10, fontFamily: 'Poppins', marginBottom: 2 },
   bannerPriceValue: { color: '#fff', fontSize: 16, fontWeight: 'bold', fontFamily: 'Lato' },
   bannerDivider: { width: 1, height: 30, backgroundColor: 'rgba(255,255,255,0.3)', marginHorizontal: 15 },
-  
+
   // Preview
   previewContainer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' },
   previewContainerWhite: { backgroundColor: '#fff' },
   previewCloseBtn: { position: 'absolute', top: 50, right: 30, zIndex: 20, padding: 8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20 },
   previewPagination: { flexDirection: 'row', justifyContent: 'center', position: 'absolute', bottom: 40, width: '100%' },
-  
+
   paginationContainer: { flexDirection: 'row', justifyContent: 'center', position: 'absolute', bottom: 10, width: '100%' },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.3)', marginHorizontal: 4 },
   activeDot: { backgroundColor: '#cadb2a', width: 20 },
@@ -1092,13 +1092,13 @@ const styles = StyleSheet.create({
   damageMapContainer: { backgroundColor: '#fff', borderRadius: 12, padding: 10, marginBottom: 15 },
   damageMapImage: { width: '100%', height: 200 },
   featureHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  
+
   // Accordion
   accordionContainer: { marginBottom: 10, backgroundColor: '#111', borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#222' },
   accordionHeader: { flexDirection: 'row', justifyContent: 'space-between', padding: 15, alignItems: 'center', backgroundColor: '#1a1a1a' },
   accordionTitle: { color: '#fff', fontSize: 14, fontWeight: 'bold', fontFamily: 'Poppins' },
   accordionContent: { padding: 15, backgroundColor: '#000' },
-  
+
   // Damages
   damagesGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   damageGridItem: { width: '48%', backgroundColor: '#181818', borderRadius: 8, padding: 10, marginBottom: 10, alignItems: 'center', borderWidth: 1, borderColor: '#333' },
@@ -1134,7 +1134,7 @@ const styles = StyleSheet.create({
   adminFeeText: { color: '#888', fontSize: 10, marginTop: 12, fontFamily: 'Poppins' },
   adminFeeBold: { color: '#fff', fontWeight: 'bold' },
   commentBox: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#111', padding: 16, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#222' },
-  commentContainer: {marginTop: 10},
+  commentContainer: { marginTop: 10 },
   tag: { borderRadius: 4, paddingHorizontal: 8, paddingVertical: 4, marginRight: 5, marginBottom: 5 },
   tagText: { fontSize: 12, fontFamily: 'Poppins' },
 

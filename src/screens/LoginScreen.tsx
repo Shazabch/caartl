@@ -154,9 +154,9 @@ const LoginScreen = () => {
           {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
         </View>
 
-        <TouchableOpacity style={styles.forgotPasswordContainer} disabled={loading}>
+        {/* <TouchableOpacity style={styles.forgotPasswordContainer} disabled={loading}>
           <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
 
         <TouchableOpacity style={[styles.loginButton, loading && styles.loginButtonDisabled]} onPress={handleLogin} disabled={loading}>

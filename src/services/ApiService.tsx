@@ -312,7 +312,7 @@ class ApiService {
   }
 
 
-async saveNotificationToken(deviceToken: string, userId?: number): Promise<Models.ApiResult<any>> {
+  async saveNotificationToken(deviceToken: string, userId?: number): Promise<Models.ApiResult<any>> {
     const body: any = { device_token: deviceToken };
     if (userId) {
       body.user_id = userId;
@@ -324,12 +324,12 @@ async saveNotificationToken(deviceToken: string, userId?: number): Promise<Model
     });
   }
 
-   async getNotifications(page: number = 1): Promise<Models.ApiResult<Models.ApiResponse<Models.PaginatedResponse<Models.ApiNotification>>>> {
+  async getNotifications(page: number = 1): Promise<Models.ApiResult<Models.ApiResponse<Models.PaginatedResponse<Models.ApiNotification>>>> {
     return this.apiCall(`/user/notifications?page=${page}`);
   }
 
   async markNotificationAsRead(id: string): Promise<Models.ApiResult<any>> {
-    return this.apiCall(`/user/notifications/${id}/read`, { method: 'POST' }); 
+    return this.apiCall(`/user/notifications/${id}/read`, { method: 'POST' });
     // Note: Usually marking read is POST/PUT, but based on your URL structure it might be GET. 
     // If your backend expects POST, change method to 'POST'.
   }

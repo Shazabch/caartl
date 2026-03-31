@@ -22,6 +22,7 @@ import { useAlert } from "../context/AlertContext";
 import apiService from "../services/ApiService";
 import * as Models from "../data/modal";
 import type { RootStackParamList } from "../navigation/AppNavigator";
+import { Ionicons } from "@expo/vector-icons";
 
 const { width, height } = Dimensions.get("window");
 
@@ -83,10 +84,22 @@ interface PlanDetailsModalProps {
 const PlanDetailsModal: React.FC<PlanDetailsModalProps> = ({ visible, onClose, plan }) => {
   if (!plan) return null;
   return (
-    <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
+    <Modal
+      animationType="fade"
+      transparent
+      visible={visible}
+      onRequestClose={onClose}
+      statusBarTranslucent={true} // 👈 important for Android
+    >
       <View style={modalStyles.centeredView}>
         <View style={modalStyles.modalView}>
-          <TouchableOpacity style={modalStyles.closeButton} onPress={onClose}><Image source={{ uri: "https://static.codia.ai/image/2025-10-20/x-icon.png" }} style={modalStyles.closeIcon} /></TouchableOpacity>
+          <TouchableOpacity
+            style={modalStyles.closeButton}
+            onPress={onClose}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="close" size={24} color="#CADB2A" />
+          </TouchableOpacity>
           <Text style={modalStyles.planName}>{plan.name} Package</Text>
           <View style={modalStyles.priceBannerContainer}>
             <LinearGradient colors={["#CADB2A", "#CADB2A", "#000000"]} start={{ x: 0, y: 0.5 }} end={{ x: 0.8, y: 0.5 }} style={modalStyles.priceBannerGradient}></LinearGradient>
@@ -179,35 +192,86 @@ const SignUpScreen: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSignUp = async () => {
+  const formatPhoneNumber = (phone: string): string | null => {
+    // Remove all non-digit characters
+    let cleaned = phone.replace(/\D/g, '');
 
+    if (cleaned.startsWith('971')) {
+      // Dubai number, prepend +
+      return `+${cleaned}`;
+    } else if (cleaned.startsWith('92')) {
+      // Pakistan number, prepend + (testing only, no error)
+      return `+${cleaned}`;
+    }
+
+    // Invalid number for Dubai, return null
+    return null;
+  };
+  const handleSignUp = async () => {
     if (!validateFields()) return;
+
+
+    const formattedPhone = formatPhoneNumber(phone);
+
+    // Show error only if user entered Dubai number incorrectly
+    if (!formattedPhone && phone.startsWith('971')) {
+      setErrors({ ...errors, phone: 'Phone number must start with Dubai code +971.' });
+      showAlert('Invalid Phone', 'Phone number must start with Dubai code +971.');
+      return;
+    }
+
     setLoading(true);
+
     try {
-      const success = await register({
+      const result = await register({
         name,
         email: email.trim().toLowerCase(),
         password,
         package_id: selectedPackageId,
-        phone,
+        phone: formattedPhone,
       });
-      if (!success) {
-        showAlert("Registration Failed", "This email may already be taken. Please try again.");
-      } else {
-        navigation.navigate('Verify', {
-          data: {
-            name,
-            email: email.trim().toLowerCase(),
-            password,
-            package_id: selectedPackageId,
-            phone,
-          }
-        })
+
+      if (!result.success) {
+        const apiError = result.error;
+
+        // ✅ FIELD ERRORS (email, phone, etc.)
+        if (apiError?.errors) {
+          const newErrors: any = {};
+
+          Object.keys(apiError.errors).forEach((key) => {
+            newErrors[key] = apiError.errors[key][0];
+          });
+
+          setErrors(newErrors);
+
+          // show first error in alert
+          const firstKey = Object.keys(apiError.errors)[0];
+          showAlert("Registration Failed", apiError.errors[firstKey][0]);
+        } else {
+          // ✅ GENERAL ERRORS (OTP, server, etc.)
+          showAlert(
+            "Registration Failed",
+            apiError?.message || "Something went wrong"
+          );
+        }
+
         return;
       }
+
+      // ✅ SUCCESS
+      navigation.navigate("Verify", {
+        data: {
+          name,
+          email: email.trim().toLowerCase(),
+          password,
+          package_id: selectedPackageId,
+          phone: formattedPhone,
+        },
+      });
+
     } catch (error) {
       console.error("Registration component error:", error);
-      showAlert("Error", "An unexpected error occurred during registration.");
+      showAlert("Error", "Unexpected error occurred.");
     } finally {
       setLoading(false);
     }
@@ -224,7 +288,7 @@ const SignUpScreen: React.FC = () => {
         <Image source={{ uri: "https://static.codia.ai/image/2025-10-20/w6zCFKrx5n.png" }} style={styles.backgroundTop} />
         <Image source={{ uri: "https://static.codia.ai/image/2025-10-20/66UXWNnDCx.png" }} style={styles.backgroundBottom} />
         <View style={styles.content}>
-          <Image source={{ uri: "https://static.codia.ai/image/2025-10-20/2s2Butmi2c.png" }} style={styles.logo} />
+          {/* <Image source={{ uri: "https://static.codia.ai/image/2025-10-20/2s2Butmi2c.png" }} style={styles.logo} /> */}
           <View style={styles.headerContainer}><Text style={styles.welcomeText}>Create Account</Text><Text style={styles.subtitleText}>Sign up to get started!</Text></View>
 
           <View style={styles.inputSection}>
@@ -251,8 +315,8 @@ const SignUpScreen: React.FC = () => {
 
             <View style={styles.inputWrapper}>
               <View style={[styles.inputContainer, errors.phone ? styles.inputError : null]}>
-                <Image source={{ uri: "https://static.codia.ai/image/2025-10-20/bTCs4R8GxF.png" }} style={styles.inputIcon} />
-                <TextInput style={styles.textInput} placeholder="Phone" placeholderTextColor="rgba(0, 0, 0, 0.37)" onChangeText={text => { setPhone(text); if (errors.phone) setErrors({ ...errors, phone: undefined }); }} keyboardType="phone-pad" editable={!loading} />
+                <Ionicons name="call" size={18} color="#878686" style={styles.inputIcon} />
+                <TextInput style={styles.textInput} placeholder="971xxxxxxxxx" placeholderTextColor="rgba(0, 0, 0, 0.37)" onChangeText={text => { setPhone(text); if (errors.phone) setErrors({ ...errors, phone: undefined }); }} keyboardType="phone-pad" editable={!loading} />
               </View>
             </View>
 
@@ -305,8 +369,33 @@ const SignUpScreen: React.FC = () => {
             ) : (
               packages.map((pkg, index) => (
                 <TouchableOpacity key={pkg.id} style={[styles.planCard, selectedPackageId === pkg.id && styles.selectedPlanCard, index !== packages.length - 1 && { marginRight: 10 }]} onPress={() => setSelectedPackageId(pkg.id)} disabled={packagesLoading}>
-                  <View style={styles.planHeader}><Text style={[styles.planName, selectedPackageId === pkg.id && styles.selectedPlanName]}>{pkg.name}</Text><TouchableOpacity style={styles.infoButton} onPress={() => handlePlanInfoClick(pkg)}><Text style={styles.infoButtonText}>i</Text></TouchableOpacity></View>
-                  <View style={styles.priceAndCurrencyContainer}><Text style={[styles.planPriceNumber, selectedPackageId === pkg.id && styles.selectedPlanPrice]}>{parseInt(pkg.price)}</Text><Text style={[styles.planCurrencyText, selectedPackageId === pkg.id && styles.selectedPlanPrice]}>AED</Text></View>
+                  <View style={styles.planHeader}>
+                    <TouchableOpacity
+                      style={styles.infoButton}
+                      onPress={() => handlePlanInfoClick(pkg)}
+                    >
+                      <Text style={styles.infoButtonText}>i</Text>
+                    </TouchableOpacity>
+
+                    <Text
+                      style={[
+                        styles.planName,
+                        selectedPackageId === pkg.id && styles.selectedPlanName,
+                        { marginTop: 5, textAlign: "left", width: "100%" }
+                      ]}
+                    >
+                      {pkg.name}
+                    </Text>
+                  </View>
+                  <View style={styles.priceAndCurrencyContainer}>
+                    <Text
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      style={[styles.planPriceNumber, selectedPackageId === pkg.id && styles.selectedPlanPrice]}
+                    >
+                      {Number(pkg.price).toLocaleString()}
+                    </Text>
+                    <Text style={[styles.planCurrencyText, selectedPackageId === pkg.id && styles.selectedPlanPrice]}>AED</Text></View>
                 </TouchableOpacity>
               ))
             )}
@@ -337,7 +426,7 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: 25, paddingTop: 60, alignItems: "center" },
   logo: { width: 150, height: 65, marginBottom: 35, resizeMode: "contain" },
   headerContainer: { alignItems: "center", marginBottom: 30 },
-  welcomeText: { fontFamily: "Borg9", fontSize: 20, color: "#FFFFFF", marginBottom: 8, textAlign: "center" },
+  welcomeText: { fontFamily: "Borg9", fontSize: 20, color: "#FFFFFF", marginBottom: 8, marginTop: 20, textAlign: "center" },
   subtitleText: { fontFamily: "Baloo Thambi 2", fontSize: 16, color: "#FFFFFF", textAlign: "center", lineHeight: 22 },
   inputSection: { width: "100%", marginBottom: 15 },
   inputWrapper: { marginBottom: 15, width: '100%' },
@@ -350,13 +439,29 @@ const styles = StyleSheet.create({
   plansContainer: { flexDirection: "row", justifyContent: "space-between", width: "100%", marginBottom: 20, paddingHorizontal: 10 },
   planCard: { flex: 1, maxWidth: (width - 25 * 2 - 10 * 2) / 3, height: 105, borderRadius: 15, borderWidth: 1, borderColor: "#CADB2A", paddingVertical: 10, paddingHorizontal: 5, alignItems: "center", justifyContent: "space-around", backgroundColor: "transparent" },
   selectedPlanCard: { backgroundColor: "#CADB2A" },
-  planHeader: { flexDirection: "row", alignItems: "center", justifyContent: "center", width: "100%", position: "relative", marginBottom: 5 },
+  planHeader: {
+    width: "100%",
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
+    position: "relative",
+  },
   planName: { fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
   selectedPlanName: { color: "#000000" },
   infoButton: { position: "absolute", top: -8, right: 0, backgroundColor: "#CADB2A", borderRadius: 10, width: 20, height: 20, justifyContent: "center", alignItems: "center", zIndex: 1, borderWidth: 1, borderColor: "#000000" },
   infoButtonText: { color: "#000000", fontSize: 12, fontWeight: "bold" },
-  priceAndCurrencyContainer: { flexDirection: "row", alignItems: "baseline", marginBottom: 5 },
-  planPriceNumber: { fontSize: 20, fontWeight: "bold", color: "#FFFFFF" },
+  priceAndCurrencyContainer: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    marginBottom: 5,
+    flexWrap: "wrap",
+    justifyContent: "center",
+  },
+  planPriceNumber: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    flexShrink: 1,
+  },
   planCurrencyText: { fontSize: 12, fontWeight: "bold", color: "#FFFFFF", marginLeft: 3, top: 2 },
   selectedPlanPrice: { color: "#000000" },
   signUpButton: { backgroundColor: "#CADB2A", borderRadius: 18, paddingVertical: 18, width: "100%", alignItems: "center", marginBottom: 15 },
@@ -371,10 +476,33 @@ const styles = StyleSheet.create({
 });
 
 const modalStyles = StyleSheet.create({
-  centeredView: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0, 0, 0, 0.7)" },
-  modalView: { width: width * 0.9, backgroundColor: "#000000", borderRadius: 20, padding: 25, alignItems: "flex-start", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5, borderColor: "#CADB2A", borderWidth: 1, position: "relative" },
-  closeButton: { position: "absolute", top: 15, right: 15, padding: 5, zIndex: 1, backgroundColor: "#000000", borderRadius: 15 },
-  closeIcon: { width: 20, height: 20, tintColor: "#CADB2A", resizeMode: "contain" },
+  centeredView: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalView: { paddingTop: 40, width: width * 0.9, backgroundColor: "#000000", borderRadius: 20, padding: 25, alignItems: "flex-start", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5, borderColor: "#CADB2A", borderWidth: 1, position: "relative" },
+  closeButton: {
+    position: "absolute",
+    top: 15,
+    right: 15,
+    padding: 8,
+    zIndex: 999,
+    elevation: 10,
+    backgroundColor: "#111",
+    borderRadius: 20,
+  },
+  closeIcon: {
+    width: 22,
+    height: 22,
+    tintColor: "#CADB2A",
+    resizeMode: "contain",
+  },
   planName: { fontSize: 28, fontWeight: "bold", color: "#FFFFFF", marginBottom: 15, marginTop: 10 },
   priceBannerContainer: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
   priceBannerGradient: { paddingVertical: 5, paddingRight: 10, borderRadius: 10, alignItems: "center", justifyContent: "center", minWidth: 60, height: 40 },

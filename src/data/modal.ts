@@ -385,13 +385,22 @@ export interface NotificationData {
     user_email?: string;
     type?: string;
     message?: string;
-    
+
     // 🟢 Added new fields based on API response
     title?: string;
     bid_id?: number;
     link?: string;
     name?: string;
     email?: string;
-    
+
     [key: string]: any;
-} 
+}
+
+export interface ApiNotification {
+    id: number;
+    type: string;
+    read_at: string | null;
+    created_at: string;
+    updated_at: string;
+    data: NotificationData; // your existing NotificationData type
+}

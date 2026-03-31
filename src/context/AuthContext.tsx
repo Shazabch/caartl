@@ -7,13 +7,13 @@ interface AuthContextType {
     userToken: string | null;
     user: Models.User | null;
     isLoading: boolean;
-    isGuest: boolean;        // 🟢 true if user is guest (id === 0)
-    isApproved: boolean;     // 🟢 true if user is approved (is_approved === 1)
-    isUnapproved: boolean;   // 🟢 true if logged in but not approved
+    isGuest: boolean;
+    isApproved: boolean;
+    isUnapproved: boolean;
     login: (credentials: any) => Promise<boolean>;
-    register: (userData: any) => Promise<boolean>;
+    register: (userData: any) => Promise<{ success: boolean; error?: any }>;
     logout: () => void;
-    updateUser: (user: Models.User) => void;
+    updateUser: (user: Models.User | null) => Promise<void>;
     guestLogin: () => Promise<void>;
     verifyPhone: (phone: string, code: string) => Promise<boolean>;
     resendOtp: (phone: string) => Promise<boolean>;
@@ -26,18 +26,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [userToken, setUserToken] = useState<string | null>(null);
     const [user, setUser] = useState<Models.User | null>(null);
 
+    // Normalize user approval status
     const normalizeUser = (inputUser: Models.User | null): Models.User | null => {
         if (!inputUser) return null;
         const hasApproval = typeof inputUser.is_approved === 'number';
         const resolvedApproval = hasApproval
             ? inputUser.is_approved
-            : (inputUser.status === 'pending' ? 0 : 1);
-        return {
-            ...inputUser,
-            is_approved: resolvedApproval,
-        };
+            : inputUser.status === 'pending'
+                ? 0
+                : 1;
+        return { ...inputUser, is_approved: resolvedApproval };
     };
 
+    // Restore token and user from AsyncStorage
     useEffect(() => {
         const bootstrapAsync = async () => {
             let token: string | null = null;
@@ -51,22 +52,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 }
 
                 if (token) {
-                    // Validate token with profile endpoint
                     const result = await apiService.getUserProfile();
 
-                    // If successful (success: true means 200 OK and valid JSON)
                     if (result.success && result.data.data) {
                         userData = normalizeUser(result.data.data);
                         await AsyncStorage.setItem('userData', JSON.stringify(userData));
                     } else if (result.status === 401) {
-                        // ✅ ONLY log out if the server explicitly says the token is expired/invalid
                         console.log("Token expired or invalid. Logging out.");
                         token = null;
                         userData = null;
                         await AsyncStorage.multiRemove(['userToken', 'userData']);
                     } else {
-                        // ✅ Network error or server maintenance (Status 0, 500, etc.)
-                        // Do NOT log the user out. Just use the local AsyncStorage data.
                         console.log("Network error or server down. Keeping local session active.");
                     }
                 }
@@ -84,11 +80,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         bootstrapAsync();
     }, []);
 
+    // Login
     const login = async (credentials: any) => {
         const result = await apiService.login(credentials);
         if (result.success && result.data.access_token) {
             const { access_token, user } = result.data;
             const normalizedUser = normalizeUser(user);
+            if (!normalizedUser) return false;
+
             setUserToken(access_token);
             setUser(normalizedUser);
             await apiService.storeUserData(normalizedUser, access_token);
@@ -97,26 +96,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return false;
     };
 
+    // Register
     const register = async (userData: any) => {
-        const result = await apiService.register(userData);
-        // if (result.success && result.data.token) {
-        if (result.success) {
-            const { token, user } = result.data;
-            const normalizedUser = normalizeUser(user);
-            setUserToken(token);
-            setUser(normalizedUser);
-            // await apiService.storeUserData(normalizedUser, token);
-            // console.log("normalizedUser ==>>", normalizedUser);
-            return true;
+        try {
+            const result = await apiService.register(userData);
+
+            if (result.success) {
+                const { token, user } = result.data;
+                const normalizedUser = normalizeUser(user);
+                if (!normalizedUser) return { success: false, error: 'Invalid user data' };
+
+                setUserToken(token);
+                setUser(normalizedUser);
+                await apiService.storeUserData(normalizedUser, token);
+
+                return { success: true };
+            }
+
+            return { success: false, error: result.data };
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error?.response?.data || { message: "Something went wrong. Please try again." },
+            };
         }
-        return false;
     };
 
+    // Verify phone
     const verifyPhone = async (phone: string, code: string) => {
         const result = await apiService.verifyPhone(phone, code);
         if (result.success) {
             const { token, user } = result.data;
             const normalizedUser = normalizeUser(user);
+            if (!normalizedUser) return false;
+
             setUserToken(token);
             setUser(normalizedUser);
             await apiService.storeUserData(normalizedUser, token);
@@ -125,14 +138,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return false;
     };
 
+    // Resend OTP
     const resendOtp = async (phone: string) => {
         const result = await apiService.resendOtp(phone);
-        if (result.success) {
-            return true;
-        }
-        return false;
+        return result.success;
     };
 
+    // Logout
     const logout = async () => {
         await apiService.logout();
         setUserToken(null);
@@ -140,15 +152,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         await AsyncStorage.multiRemove(['userToken', 'userData']);
     };
 
-    const updateUser = async (newUser: Models.User) => {
+    // Update user (nullable-safe)
+    const updateUser = async (newUser: Models.User | null) => {
         setUser(newUser);
-        await AsyncStorage.setItem('userData', JSON.stringify(newUser));
+        if (newUser) {
+            await AsyncStorage.setItem('userData', JSON.stringify(newUser));
+        } else {
+            await AsyncStorage.removeItem('userData');
+        }
     };
 
-    // 🟢 ADD: Guest login method
+    // Guest login
     const guestLogin = async () => {
         const guestUser: Models.User = {
-            id: 0, // 0 for guest
+            id: 0,
             agent_id: null,
             is_approved: 0,
             name: 'Guest',
@@ -172,12 +189,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         await AsyncStorage.removeItem('userToken');
     };
 
-    // 🟢 Computed properties for approval status
-    const isGuest = !!user && user.id === 0;
-    const isApproved = !!user && !isGuest && user.is_approved === 1;
-    const isUnapproved = !!user && !isGuest && user.is_approved === 0; // Logged in but not approved
+    // Computed flags
+    const isGuest = user?.id === 0;
+    const isApproved = !!user && user.id !== 0 && user.is_approved === 1;
+    const isUnapproved = !!user && user.id !== 0 && user.is_approved === 0;
 
-    const value = {
+    const value: AuthContextType = {
         userToken,
         user,
         isLoading,
@@ -196,6 +213,4 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => {
-    return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);
