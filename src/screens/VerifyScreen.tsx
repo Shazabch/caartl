@@ -35,7 +35,7 @@ interface VerifyErrors {
 
 const VerifyScreen: React.FC = () => {
   const navigation = useNavigation<VerifyScreenNavigationProp>();
-  const  route  = useRoute<any>();
+  const route = useRoute<any>();
   const data = route?.params?.data || {};
   const { register, verifyPhone, resendOtp } = useAuth();
   const { showAlert } = useAlert();
@@ -71,7 +71,7 @@ const VerifyScreen: React.FC = () => {
         showAlert("Verification Failed", "Invalid code. Please try again.");
       } else {
         showAlert("Verification Success", "Phone number verified successfully.");
-        
+
       }
     } catch (error) {
       console.error("Verification component error:", error);
@@ -104,7 +104,7 @@ const VerifyScreen: React.FC = () => {
           <Image source={{ uri: "https://static.codia.ai/image/2025-10-20/2s2Butmi2c.png" }} style={styles.logo} />
           <View style={styles.headerContainer}>
             <Text style={styles.welcomeText}>Verify Phone Number</Text>
-            <Text style={styles.subtitleText}>Enter the code sent to your phone number</Text>
+            <Text style={styles.subtitleText}>Enter the code sent to your phone|email</Text>
           </View>
 
           <View style={styles.inputSection}>
