@@ -35,14 +35,18 @@ class ApiService {
   async apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<Models.ApiResult<T>> {
     const url = `${this.baseURL}${endpoint}`;
     const token = await this.getToken();
+    const isFormData = !!options.body && typeof options.body === 'object' && typeof (options.body as any).append === 'function';
 
     const defaultOptions: RequestInit = {
       headers: {
-        'Content-Type': 'application/json',
         'Accept': 'application/json',
         ...(token && { Authorization: `Bearer ${token}` }),
       },
     };
+
+    if (!isFormData) {
+      (defaultOptions.headers as Record<string, string>)['Content-Type'] = 'application/json';
+    }
 
     const finalOptions: RequestInit = {
       ...defaultOptions,
@@ -117,8 +121,10 @@ class ApiService {
     return this.apiCall('/profile');
   }
 
-  async updateUserProfile(userData: { name: string; email: string; phone: string; bio: string }): Promise<Models.ApiResult<Models.UpdateProfileResponse>> {
-    return this.apiCall('/user/profile/update', { method: 'POST', body: JSON.stringify(userData) });
+  async updateUserProfile(userData: { name: string; email: string; phone: string; bio: string } | FormData): Promise<Models.ApiResult<Models.UpdateProfileResponse>> {
+    const isFormPayload = !!userData && typeof userData === 'object' && typeof (userData as any).append === 'function';
+    const body = isFormPayload ? userData as FormData : JSON.stringify(userData);
+    return this.apiCall('/user/profile/update', { method: 'POST', body });
   }
 
   async changePassword(payload: { current_password: string; new_password: string; confirm_password: string }): Promise<Models.ApiResult<any>> {

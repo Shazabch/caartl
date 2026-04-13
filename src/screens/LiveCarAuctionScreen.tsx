@@ -2,8 +2,8 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ResizeMode, Video } from 'expo-av';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Image as ExpoImage } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -796,7 +796,7 @@ export default function LiveCarAuctionScreen() {
 
   let currentPrice = 0;
   let sellerExpectation = 0;
-  let leadingUser = "No Bids Yet";
+  let hasLeadingBid = false;
 
   if (viewType === 'negotiation' && negotiationBid) {
     currentPrice = negotiationBid.bid_amount;
@@ -804,9 +804,7 @@ export default function LiveCarAuctionScreen() {
   } else {
     currentPrice = biddingData?.highest_bid ? Number(biddingData.highest_bid) : Number(vehicle.starting_bid_amount);
     sellerExpectation = Number(vehicle.price || 0);
-    if (biddingData?.bids && biddingData.bids.length > 0) {
-      leadingUser = biddingData.bids[0].user.name;
-    }
+    hasLeadingBid = !!(biddingData?.bids && biddingData.bids.length > 0);
   }
 
   const imageList = vehicle.images?.map((img: any) => img.path) || [];
@@ -946,7 +944,7 @@ export default function LiveCarAuctionScreen() {
                 <Text style={styles.leadingText}>{formatStartDate(vehicle.auction_start_date)}</Text>
               ) : viewType === 'live' && bookingStatus === 'none' ? (
                 <>
-                  <Text style={styles.leadingText}><Feather name="user" size={14} color="#cadb2a" /> {leadingUser} is Leading</Text>
+                  <Text style={styles.leadingText}><MaterialCommunityIcons name="gavel" size={14} color="#cadb2a" /> {hasLeadingBid ? 'Last Leading Bid' : 'No Bids Yet'}</Text>
                   <View style={styles.smallTimerBadge}><Text style={styles.smallTimerText}>{elapsedTime}</Text></View>
                 </>
               ) : (
