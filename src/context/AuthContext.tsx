@@ -21,6 +21,17 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
+const formatRoleLabel = (role?: string | null) => {
+    if (!role) return undefined;
+
+    return role
+        .replace(/[-_]+/g, ' ')
+        .trim()
+        .split(/\s+/)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [userToken, setUserToken] = useState<string | null>(null);
@@ -35,7 +46,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             : inputUser.status === 'pending'
                 ? 0
                 : 1;
-        return { ...inputUser, is_approved: resolvedApproval };
+        const resolvedRole = formatRoleLabel(inputUser.role) || formatRoleLabel(inputUser.roles?.[0]) || 'Member';
+
+        return {
+            ...inputUser,
+            is_approved: resolvedApproval,
+            role: resolvedRole,
+            roles: inputUser.roles?.length ? inputUser.roles : inputUser.role ? [inputUser.role] : undefined,
+        };
     };
 
     // Restore token and user from AsyncStorage
@@ -48,7 +66,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 const userDataString = await AsyncStorage.getItem('userData');
 
                 if (userDataString) {
-                    userData = JSON.parse(userDataString);
+                    userData = normalizeUser(JSON.parse(userDataString));
                 }
 
                 if (token) {
