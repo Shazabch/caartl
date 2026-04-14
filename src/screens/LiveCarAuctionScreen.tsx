@@ -349,7 +349,10 @@ export default function LiveCarAuctionScreen() {
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
 
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+  const [loadedBannerCount, setLoadedBannerCount] = useState(3);
+  const [bannerSlideWidth, setBannerSlideWidth] = useState(width);
   const [activeInspectionIndex, setActiveInspectionIndex] = useState(0);
+  const lastBannerIndexRef = useRef(0);
 
   const [showFaultsList, setShowFaultsList] = useState(false);
 
@@ -788,6 +791,52 @@ export default function LiveCarAuctionScreen() {
     return groups;
   }, [latestInspection]);
 
+  const imageList = useMemo(() => {
+    const vehicleData = fullData?.vehicle;
+    if (!vehicleData) return [];
+
+    const list = vehicleData.images?.map((img: any) => img.path) || [];
+    if (vehicleData.cover_image && typeof vehicleData.cover_image !== 'string') {
+      if (!list.includes(vehicleData.cover_image.path)) list.unshift(vehicleData.cover_image.path);
+    }
+    return list;
+  }, [fullData?.vehicle]);
+
+  useEffect(() => {
+    setActiveBannerIndex(0);
+    setLoadedBannerCount(Math.min(3, imageList.length));
+    lastBannerIndexRef.current = 0;
+  }, [imageList]);
+
+  // Keep preload requests in sync with the progressive load window.
+  useEffect(() => {
+    const preloadTargets = imageList.slice(0, loadedBannerCount);
+    if (preloadTargets.length > 0) {
+      ExpoImage.prefetch(preloadTargets).catch(() => {});
+    }
+  }, [imageList, loadedBannerCount]);
+
+  const updateBannerLoadWindow = useCallback((index: number) => {
+    setLoadedBannerCount((prev) => {
+      // Load in chunks of 3. Example: starts with 3, at index 1 -> 6.
+      if (index >= prev - 2) {
+        return Math.min(imageList.length, prev + 3);
+      }
+      return prev;
+    });
+  }, [imageList.length]);
+
+  const handleBannerScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const measuredWidth = bannerSlideWidth || e.nativeEvent.layoutMeasurement.width || width;
+    const rawIndex = measuredWidth > 0 ? e.nativeEvent.contentOffset.x / measuredWidth : 0;
+    const idx = Math.max(0, Math.min(imageList.length - 1, Math.round(rawIndex)));
+    if (idx !== lastBannerIndexRef.current) {
+      lastBannerIndexRef.current = idx;
+      setActiveBannerIndex(idx);
+      updateBannerLoadWindow(idx);
+    }
+  }, [bannerSlideWidth, imageList.length, updateBannerLoadWindow]);
+
   if (loading || !fullData?.vehicle) {
     return <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#cadb2a" /></View>;
   }
@@ -805,11 +854,6 @@ export default function LiveCarAuctionScreen() {
     currentPrice = biddingData?.highest_bid ? Number(biddingData.highest_bid) : Number(vehicle.starting_bid_amount);
     sellerExpectation = Number(vehicle.price || 0);
     hasLeadingBid = !!(biddingData?.bids && biddingData.bids.length > 0);
-  }
-
-  const imageList = vehicle.images?.map((img: any) => img.path) || [];
-  if (vehicle.cover_image && typeof vehicle.cover_image !== 'string') {
-    if (!imageList.includes(vehicle.cover_image.path)) imageList.unshift(vehicle.cover_image.path);
   }
 
   const dynamicTabs = ['Car Details'];
@@ -953,19 +997,33 @@ export default function LiveCarAuctionScreen() {
             </View>
 
             {/* Banner Slider */}
-            <View style={{ height: 250, marginBottom: 15 }}>
+            <View
+              style={{ height: 250, marginBottom: 15 }}
+              onLayout={(e) => {
+                const measured = e.nativeEvent.layout.width;
+                if (measured > 0 && measured !== bannerSlideWidth) {
+                  setBannerSlideWidth(measured);
+                }
+              }}
+            >
               <ScrollView
                 horizontal
                 pagingEnabled
                 showsHorizontalScrollIndicator={false}
-                onMomentumScrollEnd={(e) => {
-                  const idx = Math.round(e.nativeEvent.contentOffset.x / width);
-                  setActiveBannerIndex(idx);
-                }}
+                onScroll={handleBannerScroll}
+                scrollEventThrottle={16}
+                onMomentumScrollEnd={handleBannerScroll}
+                onScrollEndDrag={handleBannerScroll}
               >
                 {imageList.map((img, index) => (
                   <TouchableOpacity key={index} onPress={() => handleImageOpen(imageList, index, false)}>
-                    <Image source={{ uri: img }} style={{ width: width, height: 250, resizeMode: 'cover' }} />
+                    {index < loadedBannerCount ? (
+                      <Image source={{ uri: img }} style={[styles.bannerImage, { width: bannerSlideWidth }]} />
+                    ) : (
+                      <View style={[styles.bannerImagePlaceholder, { width: bannerSlideWidth }]}>
+                        <ActivityIndicator size="small" color="#cadb2a" />
+                      </View>
+                    )}
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -1416,6 +1474,8 @@ const styles = StyleSheet.create({
   leadingText: { color: '#ccc', fontSize: 14, fontFamily: 'Poppins', fontWeight: '500' },
   smallTimerBadge: { backgroundColor: '#cadb2a', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 },
   smallTimerText: { color: '#000', fontWeight: 'bold', fontSize: 14 },
+  bannerImage: { height: 250, resizeMode: 'cover' },
+  bannerImagePlaceholder: { height: 250, backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' },
 
   imageOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 15, paddingTop: 60, justifyContent: 'flex-end' },
   bannerContent: { flexDirection: 'column', gap: 4, marginBottom: 12 },
