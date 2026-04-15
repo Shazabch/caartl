@@ -1,22 +1,22 @@
-import React, { useState, useCallback } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    FlatList,
-    TouchableOpacity,
-    ActivityIndicator,
-    RefreshControl,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useState } from 'react';
+import {
+    ActivityIndicator,
+    FlatList,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import apiService from '../services/ApiService';
 import * as Models from '../data/modal';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import apiService from '../services/ApiService';
 
 type PaymentNavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -68,12 +68,23 @@ export default function PaymentReceiptsScreen() {
         // 🟢 FIX: Added optional chaining (?.)
         const brandName = item.booking?.vehicle?.brand?.name || 'Unknown Brand';
         const modelName = item.booking?.vehicle?.vehicle_model?.name || 'Vehicle';
+        const packageInfo = (item.user as (Models.User & {
+            package?: { name?: string; price?: string | number | null };
+        }) | undefined)?.package;
 
         const title = item.type === 'booking' && item.booking?.vehicle
             ? `${brandName} ${modelName}`
-            : `Invoice #${item.id}`;
+            : item.type === 'package'
+                ? `${packageInfo?.name || 'Package'} Invoice`
+                : `Invoice #${item.id}`;
 
-        const amount = item.booking ? item.booking.total_amount : '0.00';
+        const amount = item.type === 'booking'
+            ? item.booking?.total_amount
+            : item.type === 'package'
+                ? packageInfo?.price
+                : null;
+
+        const parsedAmount = Number(amount ?? 0);
 
         return (
             <TouchableOpacity
@@ -90,7 +101,7 @@ export default function PaymentReceiptsScreen() {
                         <Text style={styles.date}>{new Date(item.created_at).toDateString()}</Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={styles.amount}>AED {Number(amount).toLocaleString()}</Text>
+                        <Text style={styles.amount}>AED {parsedAmount.toLocaleString()}</Text>
                         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
                             <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
                                 {item.status.toUpperCase()}

@@ -89,8 +89,14 @@ export default function InvoiceDetailScreen() {
         }
     };
 
+    const packageInfo = invoice.user?.package as { name?: string; price?: string | number | null } | undefined;
     const vehicle = invoice.booking?.vehicle;
-    const amount = invoice.booking?.total_amount || '0.00';
+    const amount = invoice.type === 'package'
+        ? packageInfo?.price
+        : invoice.booking?.total_amount || '0.00';
+    const isPackageInvoice = invoice.type === 'package';
+    const isPackagePaid = invoice.status?.toLowerCase() === 'paid';
+    const canDownloadPdf = !isPackageInvoice || isPackagePaid;
 
     return (
         <View style={styles.container}>
@@ -124,10 +130,14 @@ export default function InvoiceDetailScreen() {
 
                         <View style={styles.infoRow}>
                             <Text style={[styles.label, { fontSize: 16, color: '#fff' }]}>Total Amount</Text>
-                            <Text style={[styles.value, { fontSize: 18, color: '#cadb2a' }]}>AED {Number(amount).toLocaleString()}</Text>
+                            <Text style={[styles.value, { fontSize: 18, color: '#cadb2a' }]}>AED {Number(amount ?? 0).toLocaleString()}</Text>
                         </View>
 
-                        <TouchableOpacity style={styles.pdfBtn} onPress={handleOpenPdf}>
+                        <TouchableOpacity
+                            style={[styles.pdfBtn, !canDownloadPdf && styles.pdfBtnDisabled]}
+                            onPress={canDownloadPdf ? handleOpenPdf : undefined}
+                            disabled={!canDownloadPdf}
+                        >
                             <MaterialCommunityIcons name="file-pdf-box" size={24} color="#000" />
                             <Text style={styles.pdfBtnText}>Download Invoice PDF</Text>
                         </TouchableOpacity>
@@ -211,6 +221,7 @@ const styles = StyleSheet.create({
     divider: { height: 1, backgroundColor: '#333', marginVertical: 10 },
 
     pdfBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#cadb2a', borderRadius: 8, padding: 12, marginTop: 10 },
+    pdfBtnDisabled: { opacity: 0.45 },
     pdfBtnText: { color: '#000', fontWeight: 'bold', marginLeft: 8, fontFamily: 'Poppins' },
 
     section: { marginTop: 10 },
