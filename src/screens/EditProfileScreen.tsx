@@ -53,13 +53,19 @@ export default function EditProfileScreen() {
                 const filename = sourceUri.split('/').pop() || `profile_${Date.now()}.jpg`;
                 const match = /\.(\w+)$/.exec(filename);
                 const mimeType = match ? `image/${match[1].toLowerCase()}` : 'image/jpeg';
-                try {
-                    const fileResponse = await fetch(sourceUri);
-                    const fileBlob = await fileResponse.blob();
-                    const typedBlob = fileBlob.type ? fileBlob : new Blob([fileBlob], { type: mimeType });
-                    formData.append('photo', typedBlob, filename);
-                } catch {
-                    // Fallback for environments where local URI -> blob conversion fails.
+                if (Platform.OS === 'web') {
+                    try {
+                        const fileResponse = await fetch(sourceUri);
+                        const fileBlob = await fileResponse.blob();
+                        const typedBlob = fileBlob.type ? fileBlob : new Blob([fileBlob], { type: mimeType });
+                        formData.append('photo', typedBlob, filename);
+                    } catch {
+                        showAlert('Error', 'Failed to read selected image file. Please try another image.');
+                        setLoading(false);
+                        return;
+                    }
+                } else {
+                    // Native (Android/iOS) multipart upload format.
                     const uri = Platform.OS === 'android' ? sourceUri : sourceUri.replace('file://', '');
                     formData.append('photo', {
                         uri,

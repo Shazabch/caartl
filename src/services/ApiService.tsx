@@ -57,14 +57,47 @@ class ApiService {
     try {
       const response = await fetch(url, finalOptions);
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          return { success: false, status: 401, data: { message: 'Unauthorized' } as any };
+      const contentType = response.headers.get('content-type') || '';
+      const rawBody = await response.text();
+
+      let data: any = null;
+      if (rawBody) {
+        if (contentType.includes('application/json')) {
+          try {
+            data = JSON.parse(rawBody);
+          } catch {
+            data = null;
+          }
+        } else {
+          try {
+            data = JSON.parse(rawBody);
+          } catch {
+            data = { message: rawBody };
+          }
         }
       }
 
-      const data = await response.json();
-      return { success: response.ok, status: response.status, data };
+      if (!response.ok) {
+        if (response.status === 401) {
+          return {
+            success: false,
+            status: 401,
+            data: { message: data?.message || 'Unauthorized' } as any,
+          };
+        }
+
+        return {
+          success: false,
+          status: response.status,
+          data: data || ({ message: `Request failed with status ${response.status}.` } as any),
+        };
+      }
+
+      return {
+        success: true,
+        status: response.status,
+        data: (data ?? { status: 'success' }) as T,
+      };
     } catch (error) {
       console.error(`API call error to ${endpoint}:`, error);
       return {
