@@ -1,5 +1,6 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Image,
   StyleSheet,
@@ -7,7 +8,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Models from '../data/modal';
 
 interface CarCardProps {
@@ -86,7 +86,8 @@ export const CarCard: React.FC<CarCardProps> = ({
 
   if (variant === 'live') {
     leftPriceLabel = 'Current Bid';
-    const val = car.current_bid ? Number(car.current_bid) : Number(car.starting_bid_amount);
+    const latestBidAmount = car.latest_bid?.bid_amount;
+    const val = Number(car.current_bid ?? latestBidAmount ?? car.starting_bid_amount);
     leftPriceValue = val.toLocaleString();
     rightPriceLabel = 'Seller Expectation';
   }

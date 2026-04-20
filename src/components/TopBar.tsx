@@ -1,11 +1,12 @@
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { useAlert } from '../context/AlertContext';
+import * as Models from '../data/modal';
 import type { NotificationItem, RootStackParamList } from '../navigation/AppNavigator';
 import ApiService from '../services/ApiService';
-import * as Models from '../data/modal';
 
 interface TopBarProps {
   onMenuPress?: () => void;
@@ -14,9 +15,36 @@ interface TopBarProps {
 
 export const TopBar: React.FC<TopBarProps> = ({ onMenuPress, onNotificationPress }) => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { showAlert } = useAlert();
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
+  const isOutbidNotification = (item: NotificationItem) => {
+    return item.data?.type === 'outbid' && !!item.data?.vehicle_id;
+  };
+
+  const resolveAuctionState = async (vehicleId: number): Promise<'live' | 'upcoming' | 'ended' | 'unknown'> => {
+    try {
+      const result = await ApiService.getAuctionDetails(vehicleId);
+      const vehicle = result.data?.data?.vehicle;
+
+      if (!result.success || !vehicle?.auction_start_date || !vehicle?.auction_end_date) {
+        return 'unknown';
+      }
+
+      const startDate = new Date(String(vehicle.auction_start_date).replace(' ', 'T'));
+      const endDate = new Date(String(vehicle.auction_end_date).replace(' ', 'T'));
+      if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return 'unknown';
+
+      const now = new Date();
+      if (now < startDate) return 'upcoming';
+      if (now >= endDate) return 'ended';
+      return 'live';
+    } catch {
+      return 'unknown';
+    }
+  };
 
   // 🟢 Helper: Calculate "Time Ago"
   const getRelativeTime = (dateString: string) => {
@@ -57,7 +85,8 @@ export const TopBar: React.FC<TopBarProps> = ({ onMenuPress, onNotificationPress
     message: message,
     time: getRelativeTime(apiNotif.created_at),
     isRead: !!apiNotif.read_at,
-    data: apiNotif.data
+    data: apiNotif.data,
+    auctionState: 'unknown'
   };
 };
 
@@ -69,7 +98,14 @@ export const TopBar: React.FC<TopBarProps> = ({ onMenuPress, onNotificationPress
       const response = await ApiService.getNotifications();
       if (response.success && response.data.data.data) {
         const mappedData = response.data.data.data.map(mapNotificationToItem);
-        setNotifications(mappedData);
+        const enrichedData = await Promise.all(
+          mappedData.map(async (item) => {
+            if (!isOutbidNotification(item)) return item;
+            const auctionState = await resolveAuctionState(Number(item.data.vehicle_id));
+            return { ...item, auctionState };
+          })
+        );
+        setNotifications(enrichedData);
       }
     } catch (error) {
       console.error('Failed to fetch notifications', error);
@@ -121,8 +157,20 @@ export const TopBar: React.FC<TopBarProps> = ({ onMenuPress, onNotificationPress
           } 
           // If other bid related -> LiveAuction
           else if (bid_id || type === 'outbid' || type === 'bid_placed') {
-               console.log("Navigating to LiveAuction", vehicle_id);
-               navigation.navigate('LiveAuction', { carId: Number(vehicle_id) });
+               const parsedVehicleId = Number(vehicle_id);
+               const auctionState = item.auctionState && item.auctionState !== 'unknown'
+                 ? item.auctionState
+                 : await resolveAuctionState(parsedVehicleId);
+
+               if (auctionState === 'ended') {
+                 showAlert('Auction Ended', 'This auction has already ended, so bidding is no longer available.');
+                 navigation.navigate('CarDetailPage', { carId: parsedVehicleId });
+               } else if (auctionState === 'upcoming') {
+                 navigation.navigate('LiveAuction', { carId: parsedVehicleId, viewType: 'upcoming' });
+               } else {
+                 console.log("Navigating to LiveAuction", parsedVehicleId);
+                 navigation.navigate('LiveAuction', { carId: parsedVehicleId, viewType: 'live' });
+               }
                setShowDropdown(false);
           } 
           // Default -> CarDetailPage
@@ -216,6 +264,11 @@ export const TopBar: React.FC<TopBarProps> = ({ onMenuPress, onNotificationPress
                         <View style={styles.dropdownItemTitleRow}>
                             <View style={styles.unreadDot} />
                             <Text style={styles.dropdownItemTitle} numberOfLines={1}>{item.title}</Text>
+                            {isOutbidNotification(item) && item.auctionState === 'ended' && (
+                              <View style={styles.closedBadge}>
+                                <Text style={styles.closedBadgeText}>Auction Closed</Text>
+                              </View>
+                            )}
                         </View>
                         <Text style={styles.dropdownItemTime}>{item.time}</Text>
                         </View>
@@ -234,7 +287,14 @@ export const TopBar: React.FC<TopBarProps> = ({ onMenuPress, onNotificationPress
                         onPress={() => handleNotificationItemPress(item)}
                     >
                         <View style={styles.dropdownItemRow}>
-                        <Text style={styles.dropdownItemTitle} numberOfLines={1}>{item.title}</Text>
+                        <View style={styles.dropdownItemTitleRow}>
+                          <Text style={styles.dropdownItemTitle} numberOfLines={1}>{item.title}</Text>
+                          {isOutbidNotification(item) && item.auctionState === 'ended' && (
+                            <View style={styles.closedBadge}>
+                              <Text style={styles.closedBadgeText}>Auction Closed</Text>
+                            </View>
+                          )}
+                        </View>
                         <Text style={styles.dropdownItemTime}>{item.time}</Text>
                         </View>
                         <Text style={styles.dropdownItemMessage} numberOfLines={2}>{item.message}</Text>
@@ -363,6 +423,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     marginRight: 8,
+    gap: 6,
   },
   unreadDot: {
     width: 6,
@@ -393,6 +454,21 @@ const styles = StyleSheet.create({
     color: '#aaa',
     fontFamily: 'Poppins',
     fontSize: 12,
+  },
+  closedBadge: {
+    backgroundColor: 'rgba(255, 68, 68, 0.15)',
+    borderWidth: 1,
+    borderColor: '#ff4444',
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    flexShrink: 0,
+  },
+  closedBadgeText: {
+    color: '#ff7777',
+    fontFamily: 'Poppins',
+    fontSize: 9,
+    fontWeight: '700',
   },
   emptyText: {
     color: '#666',

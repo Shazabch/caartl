@@ -306,6 +306,12 @@ const formatStartDate = (dateStr: string) => {
   return `Auction Starts ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 };
 
+const parseAuctionDate = (dateStr?: string | null) => {
+  if (!dateStr) return null;
+  const parsed = new Date(String(dateStr).replace(' ', 'T'));
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
 // ==========================================
 // MAIN SCREEN
 // ==========================================
@@ -389,15 +395,54 @@ export default function LiveCarAuctionScreen() {
     );
   };
 
+  const liveAuctionStatus = useMemo<'live' | 'upcoming' | 'ended' | 'unknown'>(() => {
+    if (viewType !== 'live') return 'unknown';
+
+    const sourceVehicle = biddingData?.vehicle || fullData?.vehicle;
+    const startDate = parseAuctionDate(sourceVehicle?.auction_start_date);
+    const endDate = parseAuctionDate(sourceVehicle?.auction_end_date);
+
+    if (!startDate || !endDate) return 'unknown';
+
+    const now = new Date();
+    if (now < startDate) return 'upcoming';
+    if (now >= endDate) return 'ended';
+    return 'live';
+  }, [viewType, biddingData?.vehicle, fullData?.vehicle]);
+
+  const ensureLiveAuctionOpen = (action: 'navigate' | 'bid'): boolean => {
+    if (viewType !== 'live') return true;
+
+    if (liveAuctionStatus === 'ended') {
+      showAlert('Auction Ended', 'This auction has already ended. Bidding is no longer available.');
+      if (action === 'bid') {
+        setIsBidSheetVisible(false);
+        setIsAutoBidSheetVisible(false);
+      }
+      return false;
+    }
+
+    if (liveAuctionStatus === 'upcoming') {
+      showAlert('Auction Not Started', 'This auction has not started yet. You cannot place bids right now.');
+      if (action === 'bid') {
+        setIsBidSheetVisible(false);
+        setIsAutoBidSheetVisible(false);
+      }
+      return false;
+    }
+
+    return true;
+  };
+
   useEffect(() => {
-    if (showStickyTimer && viewType === 'live' && bookingStatus === 'none' && !isBidSheetVisible && !isAutoBidSheetVisible) {
+    if (showStickyTimer && viewType === 'live' && liveAuctionStatus === 'live' && bookingStatus === 'none' && !isBidSheetVisible && !isAutoBidSheetVisible) {
       timerBarHeight.value = withTiming(200, { duration: 300 });
       timerBarOpacity.value = withTiming(1, { duration: 300 });
     } else {
       timerBarHeight.value = withTiming(0, { duration: 200 });
       timerBarOpacity.value = withTiming(0, { duration: 200 });
     }
-  }, [showStickyTimer, viewType, bookingStatus, isBidSheetVisible, isAutoBidSheetVisible]);
+  }, [showStickyTimer, viewType, liveAuctionStatus, bookingStatus, isBidSheetVisible, isAutoBidSheetVisible]);
 
   const getDamageBadgeColor = (damageType: string) => {
     const found = damageTypes.find(d => d.name.toLowerCase() === damageType.toLowerCase());
@@ -485,7 +530,8 @@ export default function LiveCarAuctionScreen() {
       if (!vehicleData) return;
 
       const now = new Date();
-      const targetDateStr = viewType === 'upcoming' ? vehicleData.auction_start_date : vehicleData.auction_end_date;
+      const shouldCountToStart = viewType === 'upcoming' || (viewType === 'live' && liveAuctionStatus === 'upcoming');
+      const targetDateStr = shouldCountToStart ? vehicleData.auction_start_date : vehicleData.auction_end_date;
       const targetDate = new Date(targetDateStr.replace(' ', 'T'));
       const difference = +targetDate - +now;
 
@@ -512,7 +558,7 @@ export default function LiveCarAuctionScreen() {
       }
     }, 1000);
     return () => clearInterval(timer);
-  }, [viewType, fullData, biddingData]);
+  }, [viewType, fullData, biddingData, liveAuctionStatus]);
 
   const handleLayout = (e: LayoutChangeEvent, section: string) => {
     sectionYCoords.current[section] = e.nativeEvent.layout.y;
@@ -563,6 +609,7 @@ export default function LiveCarAuctionScreen() {
   const handlePlaceBid = async () => {
     if (isGuest) { setShowLoginAlert(true); return; }
     if (isUnapproved) { setShowApprovalAlert(true); return; }
+    if (!ensureLiveAuctionOpen('bid')) return;
     if (!biddingData?.vehicle) return;
     setSubmitting(true);
     try {
@@ -584,6 +631,7 @@ export default function LiveCarAuctionScreen() {
   const handleAutoBid = async () => {
     if (isGuest) { setShowLoginAlert(true); return; }
     if (isUnapproved) { setShowApprovalAlert(true); return; }
+    if (!ensureLiveAuctionOpen('bid')) return;
     if (!biddingData?.vehicle) return;
     setSubmitting(true);
     try {
@@ -616,6 +664,16 @@ export default function LiveCarAuctionScreen() {
 
   const handleViewBooking = () => {
     navigation.navigate('ViewBooking', { vehicleId: carId });
+  };
+
+  const openBidSheet = () => {
+    if (!ensureLiveAuctionOpen('navigate')) return;
+    setIsBidSheetVisible(true);
+  };
+
+  const openAutoBidSheet = () => {
+    if (!ensureLiveAuctionOpen('navigate')) return;
+    setIsAutoBidSheetVisible(true);
   };
 
   const handleImageOpen = (imagesList: string[], index: number, isMap: boolean = false) => {
@@ -986,7 +1044,7 @@ export default function LiveCarAuctionScreen() {
             <View style={styles.topInfoRow}>
               {viewType === 'upcoming' ? (
                 <Text style={styles.leadingText}>{formatStartDate(vehicle.auction_start_date)}</Text>
-              ) : viewType === 'live' && bookingStatus === 'none' ? (
+              ) : viewType === 'live' && bookingStatus === 'none' && liveAuctionStatus === 'live' ? (
                 <>
                   <Text style={styles.leadingText}><MaterialCommunityIcons name="gavel" size={14} color="#cadb2a" /> {hasLeadingBid ? 'Last Leading Bid' : 'No Bids Yet'}</Text>
                   <View style={styles.smallTimerBadge}><Text style={styles.smallTimerText}>{elapsedTime}</Text></View>
@@ -1349,13 +1407,21 @@ export default function LiveCarAuctionScreen() {
             <Text style={styles.footerDateText}>{formatEndedDate(vehicle.auction_end_date)}</Text>
           </View>
         ) : viewType === 'live' ? (
-          !isBidSheetVisible && !isAutoBidSheetVisible ? (
+          liveAuctionStatus !== 'live' ? (
+            <View style={styles.negotiationFooter}>
+              <Text style={styles.footerDateText}>
+                {liveAuctionStatus === 'upcoming'
+                  ? formatStartDate(vehicle.auction_start_date)
+                  : formatEndedDate(vehicle.auction_end_date)}
+              </Text>
+            </View>
+          ) : !isBidSheetVisible && !isAutoBidSheetVisible ? (
             <View style={styles.bidNowContainer}>
               <View style={styles.bidFooterButtonRow}>
-                <TouchableOpacity style={styles.autoBidBtn} onPress={() => setIsAutoBidSheetVisible(true)}>
+                <TouchableOpacity style={styles.autoBidBtn} onPress={openAutoBidSheet}>
                   <Text style={styles.autoBidText}>Auto Bid</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.placeBidBtn} onPress={() => setIsBidSheetVisible(true)}>
+                <TouchableOpacity style={styles.placeBidBtn} onPress={openBidSheet}>
                   <MaterialCommunityIcons name="gavel" size={18} color="#000" style={{ marginRight: 6 }} />
                   <Text style={styles.placeBidText}>Place Bid</Text>
                 </TouchableOpacity>

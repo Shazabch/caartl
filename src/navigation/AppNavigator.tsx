@@ -44,6 +44,7 @@ export type NotificationItem = {
   time: string;
   isRead: boolean;
   data?: any; // 🟢 Added to carry payload for navigation
+  auctionState?: 'live' | 'upcoming' | 'ended' | 'unknown';
 };
 
 export type RootStackParamList = {

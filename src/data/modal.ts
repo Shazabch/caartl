@@ -171,6 +171,7 @@ export interface Vehicle {
         updated_at: string;
     };
     inspections?: InspectionReport[];
+    latest_bid?: LatestBidSummary | null;
 }
 
 // ===================================
@@ -203,6 +204,20 @@ export interface Bid {
         name: string;
     };
     vehicle?: Vehicle;
+}
+
+export interface LatestBidSummary {
+    id: number;
+    vehicle_id: number;
+    user_id: number;
+    bid_amount: number;
+    bid_time: string;
+    status: 'pending' | 'accepted' | 'rejected' | string;
+    created_at: string;
+    updated_at: string;
+    current_bid: number | null;
+    max_bid: number;
+    is_auto?: boolean | null;
 }
 
 export interface Package {

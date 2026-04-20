@@ -3,13 +3,19 @@ import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useAlert } from '../context/AlertContext';
 import type { NotificationItem, RootStackParamList } from '../navigation/AppNavigator';
 import ApiService from '../services/ApiService';
 
 const NotificationsScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { showAlert } = useAlert();
   const route = useRoute<RouteProp<RootStackParamList, 'Notifications'>>();
   const[notifications, setNotifications] = React.useState<NotificationItem[]>(route.params?.notifications ??[]);
+
+  const isOutbidEnded = (item: NotificationItem) => {
+    return item.data?.type === 'outbid' && item.auctionState === 'ended';
+  };
 
   const handleNotificationPress = async (item: NotificationItem) => {
     // 1. Mark as read visually & API call
@@ -21,6 +27,28 @@ const NotificationsScreen = () => {
             console.log("Error marking read", error);
         }
     }
+
+    const resolveAuctionState = async (vehicleId: number): Promise<'live' | 'upcoming' | 'ended' | 'unknown'> => {
+      try {
+        const result = await ApiService.getAuctionDetails(vehicleId);
+        const vehicle = result.data?.data?.vehicle;
+
+        if (!result.success || !vehicle?.auction_start_date || !vehicle?.auction_end_date) {
+          return 'unknown';
+        }
+
+        const startDate = new Date(String(vehicle.auction_start_date).replace(' ', 'T'));
+        const endDate = new Date(String(vehicle.auction_end_date).replace(' ', 'T'));
+        if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return 'unknown';
+
+        const now = new Date();
+        if (now < startDate) return 'upcoming';
+        if (now >= endDate) return 'ended';
+        return 'live';
+      } catch {
+        return 'unknown';
+      }
+    };
 
     // 2. Navigation Logic based on payload
     if (item.data) {
@@ -35,8 +63,18 @@ const NotificationsScreen = () => {
             } 
             // If other bid related -> LiveAuction
             else if (bid_id || type === 'outbid' || type === 'bid_placed') {
-                 console.log("Navigating to LiveAuction", vehicle_id);
-                 navigation.navigate('LiveAuction', { carId: Number(vehicle_id) });
+                const parsedVehicleId = Number(vehicle_id);
+                const auctionState = await resolveAuctionState(parsedVehicleId);
+
+                if (auctionState === 'ended') {
+                  showAlert('Auction Ended', 'This auction has already ended, so bidding is no longer available.');
+                  navigation.navigate('CarDetailPage', { carId: parsedVehicleId });
+                } else if (auctionState === 'upcoming') {
+                  navigation.navigate('LiveAuction', { carId: parsedVehicleId, viewType: 'upcoming' });
+                } else {
+                  console.log("Navigating to LiveAuction", parsedVehicleId);
+                  navigation.navigate('LiveAuction', { carId: parsedVehicleId, viewType: 'live' });
+                }
             } 
             // Default -> CarDetailPage
             else {
@@ -83,6 +121,11 @@ const NotificationsScreen = () => {
               <View style={styles.titleRow}>
                 <View style={styles.unreadDot} />
                 <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
+                {isOutbidEnded(item) && (
+                  <View style={styles.closedBadge}>
+                    <Text style={styles.closedBadgeText}>Auction Closed</Text>
+                  </View>
+                )}
               </View>
               <Text style={styles.time}>{item.time}</Text>
             </View>
@@ -101,7 +144,14 @@ const NotificationsScreen = () => {
             onPress={() => handleNotificationPress(item)}
           >
             <View style={styles.cardHeader}>
-              <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
+              <View style={styles.titleRow}>
+                <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
+                {isOutbidEnded(item) && (
+                  <View style={styles.closedBadge}>
+                    <Text style={styles.closedBadgeText}>Auction Closed</Text>
+                  </View>
+                )}
+              </View>
               <Text style={styles.time}>{item.time}</Text>
             </View>
             <Text style={styles.message}>{item.message}</Text>
@@ -182,6 +232,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     marginRight: 8,
+    gap: 6,
   },
   unreadDot: {
     width: 6,
@@ -207,6 +258,21 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins',
     fontSize: 13,
     lineHeight: 19,
+  },
+  closedBadge: {
+    backgroundColor: 'rgba(255, 68, 68, 0.15)',
+    borderWidth: 1,
+    borderColor: '#ff4444',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    flexShrink: 0,
+  },
+  closedBadgeText: {
+    color: '#ff7777',
+    fontFamily: 'Poppins',
+    fontSize: 9,
+    fontWeight: '700',
   },
   emptyText: {
     color: '#666',
