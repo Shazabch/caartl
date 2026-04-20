@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, TouchableOpacity, View 
 import Svg, { Path } from 'react-native-svg';
 import { useAlert } from '../context/AlertContext';
 import * as Models from '../data/modal';
+import { parseAuctionDateInDubai } from '../lib/dubaiTime';
 import type { NotificationItem, RootStackParamList } from '../navigation/AppNavigator';
 import ApiService from '../services/ApiService';
 
@@ -33,9 +34,9 @@ export const TopBar: React.FC<TopBarProps> = ({ onMenuPress, onNotificationPress
         return 'unknown';
       }
 
-      const startDate = new Date(String(vehicle.auction_start_date).replace(' ', 'T'));
-      const endDate = new Date(String(vehicle.auction_end_date).replace(' ', 'T'));
-      if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return 'unknown';
+      const startDate = parseAuctionDateInDubai(vehicle.auction_start_date);
+      const endDate = parseAuctionDateInDubai(vehicle.auction_end_date);
+      if (!startDate || !endDate) return 'unknown';
 
       const now = new Date();
       if (now < startDate) return 'upcoming';

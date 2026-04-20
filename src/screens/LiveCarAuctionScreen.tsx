@@ -38,6 +38,7 @@ import CustomAlert from '../components/ui/CustomAlert';
 import { useAlert } from '../context/AlertContext';
 import { useAuth } from '../context/AuthContext';
 import * as Models from '../data/modal';
+import { formatAuctionDateInDubai, formatAuctionDateOnlyInDubai, parseAuctionDateInDubai } from '../lib/dubaiTime';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import apiService from '../services/ApiService';
 
@@ -296,20 +297,12 @@ const getSeverityBorderColor = (severity: string) => {
 
 const formatEndedDate = (dateStr: string) => {
   if (!dateStr) return '';
-  const date = new Date(dateStr.replace(' ', 'T'));
-  return `Auction Ended ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  return `Auction Ended ${formatAuctionDateInDubai(dateStr)}`;
 };
 
 const formatStartDate = (dateStr: string) => {
   if (!dateStr) return '';
-  const date = new Date(dateStr.replace(' ', 'T'));
-  return `Auction Starts ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-};
-
-const parseAuctionDate = (dateStr?: string | null) => {
-  if (!dateStr) return null;
-  const parsed = new Date(String(dateStr).replace(' ', 'T'));
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
+  return `Auction Starts ${formatAuctionDateInDubai(dateStr)}`;
 };
 
 // ==========================================
@@ -399,8 +392,8 @@ export default function LiveCarAuctionScreen() {
     if (viewType !== 'live') return 'unknown';
 
     const sourceVehicle = biddingData?.vehicle || fullData?.vehicle;
-    const startDate = parseAuctionDate(sourceVehicle?.auction_start_date);
-    const endDate = parseAuctionDate(sourceVehicle?.auction_end_date);
+    const startDate = parseAuctionDateInDubai(sourceVehicle?.auction_start_date);
+    const endDate = parseAuctionDateInDubai(sourceVehicle?.auction_end_date);
 
     if (!startDate || !endDate) return 'unknown';
 
@@ -532,7 +525,11 @@ export default function LiveCarAuctionScreen() {
       const now = new Date();
       const shouldCountToStart = viewType === 'upcoming' || (viewType === 'live' && liveAuctionStatus === 'upcoming');
       const targetDateStr = shouldCountToStart ? vehicleData.auction_start_date : vehicleData.auction_end_date;
-      const targetDate = new Date(targetDateStr.replace(' ', 'T'));
+      const targetDate = parseAuctionDateInDubai(targetDateStr);
+      if (!targetDate) {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
       const difference = +targetDate - +now;
 
       if (difference > 0) {
@@ -1465,7 +1462,7 @@ export default function LiveCarAuctionScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Feather name="bell" size={20} color="#cadb2a" style={{ marginRight: 10 }} />
               <Text style={{ color: '#fff', fontFamily: 'Poppins', fontSize: 13 }}>
-                Auction starts on {new Date(vehicle.auction_start_date).toDateString()}
+                Auction starts on {formatAuctionDateOnlyInDubai(vehicle.auction_start_date)}
               </Text>
             </View>
           </View>

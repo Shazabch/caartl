@@ -4,6 +4,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAlert } from '../context/AlertContext';
+import { parseAuctionDateInDubai } from '../lib/dubaiTime';
 import type { NotificationItem, RootStackParamList } from '../navigation/AppNavigator';
 import ApiService from '../services/ApiService';
 
@@ -37,9 +38,9 @@ const NotificationsScreen = () => {
           return 'unknown';
         }
 
-        const startDate = new Date(String(vehicle.auction_start_date).replace(' ', 'T'));
-        const endDate = new Date(String(vehicle.auction_end_date).replace(' ', 'T'));
-        if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return 'unknown';
+        const startDate = parseAuctionDateInDubai(vehicle.auction_start_date);
+        const endDate = parseAuctionDateInDubai(vehicle.auction_end_date);
+        if (!startDate || !endDate) return 'unknown';
 
         const now = new Date();
         if (now < startDate) return 'upcoming';

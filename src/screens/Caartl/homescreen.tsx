@@ -2,15 +2,15 @@ import { DrawerActions, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -23,6 +23,7 @@ import { ShimmerCarCard } from '../../components/ShimmerCarCard';
 import { TopBar } from '../../components/TopBar';
 import { useAlert } from '../../context/AlertContext';
 import * as Models from '../../data/modal';
+import { parseAuctionDateInDubai } from '../../lib/dubaiTime';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import apiService from '../../services/ApiService';
 
@@ -240,8 +241,10 @@ export const HomescreenLight = () => {
     } else {
       const now = new Date();
       dataToDisplay = auctions.filter(car => {
-        const start = new Date(car.auction_start_date.replace(' ', 'T'));
-        const end = new Date(car.auction_end_date.replace(' ', 'T'));
+        const start = parseAuctionDateInDubai(car.auction_start_date);
+        const end = parseAuctionDateInDubai(car.auction_end_date);
+
+        if (!start || !end) return false;
 
         if (activeTab === 'live') return now >= start && now <= end;
         if (activeTab === 'upcoming') return now < start;

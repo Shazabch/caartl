@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import * as Models from '../data/modal';
+import { parseAuctionDateInDubai } from '../lib/dubaiTime';
 
 interface CarCardProps {
   car: Models.Vehicle;
@@ -35,16 +36,16 @@ export const CarCard: React.FC<CarCardProps> = ({
     if (variant === 'negotiation' || variant === 'listed') return;
 
     const calculateTimeLeft = () => {
-      const parseDate = (dateStr: string) => {
-        if (!dateStr) return new Date();
-        return new Date(dateStr.replace(' ', 'T'));
-      };
-
       const targetString = variant === 'upcoming'
         ? car.auction_start_date
         : car.auction_end_date;
 
-      const targetDate = parseDate(targetString);
+      const targetDate = parseAuctionDateInDubai(targetString);
+      if (!targetDate) {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
       const now = new Date();
       const difference = +targetDate - +now;
 

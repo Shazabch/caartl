@@ -5,37 +5,38 @@ import { ResizeMode, Video } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Dimensions,
-  Image,
-  LayoutChangeEvent,
-  Linking,
-  Modal,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Dimensions,
+    Image,
+    LayoutChangeEvent,
+    Linking,
+    Modal,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import {
-  FlatList, Gesture,
-  GestureDetector,
-  GestureHandlerRootView,
-  Pressable
+    FlatList, Gesture,
+    GestureDetector,
+    GestureHandlerRootView,
+    Pressable
 } from 'react-native-gesture-handler';
 import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
 } from "react-native-reanimated";
 
 import { useAlert } from '../context/AlertContext';
 import { useAuth } from '../context/AuthContext';
 import * as Models from '../data/modal';
+import { formatAuctionDateInDubai } from '../lib/dubaiTime';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import apiService from '../services/ApiService';
 import CustomAlert from './ui/CustomAlert';
@@ -282,8 +283,7 @@ const getSeverityBorderColor = (severity: string) => {
 
 const formatEndedDate = (dateStr: string) => {
   if (!dateStr) return '';
-  const date = new Date(dateStr.replace(' ', 'T'));
-  return `Auction Ended ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  return `Auction Ended ${formatAuctionDateInDubai(dateStr)}`;
 };
 
 // ==========================================
