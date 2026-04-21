@@ -1,29 +1,29 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    ScrollView,
-    Image,
-    TextInput,
-    Modal,
-    ActivityIndicator,
-    Dimensions,
-    Platform,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+    ActivityIndicator,
+    Dimensions,
+    Image,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import apiService from '../services/ApiService';
-import * as Models from '../data/modal';
 import { useAlert } from '../context/AlertContext';
 import { useAuth } from '../context/AuthContext';
+import * as Models from '../data/modal';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import apiService from '../services/ApiService';
 
 type BookCarRouteProp = RouteProp<RootStackParamList, 'BookCar'>;
 const { width } = Dimensions.get('window');
@@ -210,18 +210,31 @@ export default function BookCarScreen() {
                 serviceIndex++;
             });
 
-            const appendFile = (key: string, asset: ImagePicker.ImagePickerAsset) => {
+            const appendFile = async (key: string, asset: ImagePicker.ImagePickerAsset) => {
                 const uri = asset.uri;
-                const filename = uri.split('/').pop() || `upload_${Date.now()}.jpg`;
-                const match = /\.(\w+)$/.exec(filename);
-                const type = match ? `image/${match[1]}` : `image/jpeg`;
-                // @ts-ignore
-                formData.append(key, { uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''), name: filename, type });
+                const fallbackName = uri.split('/').pop() || `upload_${Date.now()}.jpg`;
+                const filename = asset.fileName || fallbackName;
+                const type = asset.mimeType || 'image/jpeg';
+
+                if (Platform.OS === 'web') {
+                    // Web FormData requires a Blob/File, not a React Native file descriptor object.
+                    const fileResponse = await fetch(uri);
+                    const blob = await fileResponse.blob();
+                    formData.append(key, blob, filename);
+                    return;
+                }
+
+                // @ts-ignore React Native FormData accepts { uri, name, type } for file uploads.
+                formData.append(key, {
+                    uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+                    name: filename,
+                    type,
+                });
             };
 
-            if (paymentScreenshot) appendFile('payment_screenshot', paymentScreenshot);
-            if (frontIdInfo) appendFile('emirate_id_front', frontIdInfo);
-            if (backIdInfo) appendFile('emirate_id_back', backIdInfo);
+            if (paymentScreenshot) await appendFile('payment_screenshot', paymentScreenshot);
+            if (frontIdInfo) await appendFile('emirate_id_front', frontIdInfo);
+            if (backIdInfo) await appendFile('emirate_id_back', backIdInfo);
 
             const result = await apiService.bookNow(formData);
 

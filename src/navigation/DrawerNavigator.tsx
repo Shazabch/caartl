@@ -1,4 +1,4 @@
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { createDrawerNavigator, DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,7 +27,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     // - allowUnapproved: true = unapproved users can access (e.g., Payment Receipts)
     const drawerItems = [
         { label: 'Buy', icon: 'shopping-bag', screen: 'ListedVehicles', type: 'Feather', public: true, allowUnapproved: true },
-        { label: 'My Bids', icon: 'gavel', screen: 'MyBiddings', type: 'MaterialCommunityIcons', public: false, allowUnapproved: false },
+        { label: 'My Bids', icon: 'gavel', screen: 'MyBiddings', type: 'FontAwesome5', public: false, allowUnapproved: false },
         { label: 'Favorites', icon: 'heart', screen: 'FavoritesScreen', type: 'Feather', public: false, allowUnapproved: false },
         { label: 'Payment Receipts', icon: 'file-text', screen: 'Payments', type: 'Feather', public: false, allowUnapproved: true }, // 🟢 Unapproved can access
     ];
@@ -93,6 +93,8 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
                                 <View style={styles.iconBox}>
                                     {item.type === 'MaterialCommunityIcons' ? (
                                         <MaterialCommunityIcons name={item.icon as any} size={18} color="#000" />
+                                    ) : item.type === 'FontAwesome5' ? (
+                                        <FontAwesome5 name={item.icon as any} size={16} color="#000" solid />
                                     ) : (
                                         <Feather name={item.icon as any} size={18} color="#000" />
                                     )}
