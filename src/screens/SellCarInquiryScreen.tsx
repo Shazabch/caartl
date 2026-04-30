@@ -1,26 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    ScrollView,
-    ActivityIndicator,
-    Image,
-    Platform,
-    Modal,
-} from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Image,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import apiService from '../services/ApiService';
-import * as Models from '../data/modal';
 import { useAlert } from '../context/AlertContext';
 import { useAuth } from '../context/AuthContext';
+import * as Models from '../data/modal';
+import apiService from '../services/ApiService';
 
 const SPECS_LIST = [
     'GCC Specs', 'European Specs', 'Japanese Specs', 'North American Specs', 'Others', 'Canadian Spec', 'Chinese Spec', 'Korean Spec'
@@ -179,12 +179,16 @@ export default function SellCarInquiryScreen() {
         formData.append('notes', notes);
 
         images.forEach((img) => {
-            const uri = img.uri;
-            const filename = uri.split('/').pop() || `upload.jpg`;
-            const match = /\.(\w+)$/.exec(filename);
-            const type = match ? `image/${match[1]}` : `image/jpeg`;
-            // @ts-ignore
-            formData.append('images[]', { uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''), name: filename, type });
+            let uri = Platform.OS === 'android' ? img.uri : img.uri.replace('file://', '');
+            const filename = uri.split('/').pop() || 'upload.jpg';
+            let ext = filename.split('.').pop()?.toLowerCase() || 'jpg';
+            if (ext === 'jpg') ext = 'jpeg';
+            const type = ext === 'png' ? 'image/png' : 'image/jpeg';
+            formData.append('images', {
+                uri,
+                name: filename,
+                type,
+            } as any);
         });
 
         try {
