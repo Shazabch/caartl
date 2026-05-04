@@ -5,32 +5,32 @@ import { ResizeMode, Video } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Dimensions,
-    Image,
-    LayoutChangeEvent,
-    Linking,
-    Modal,
-    NativeScrollEvent,
-    NativeSyntheticEvent,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  LayoutChangeEvent,
+  Linking,
+  Modal,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import {
-    FlatList, Gesture,
-    GestureDetector,
-    GestureHandlerRootView,
-    Pressable
+  FlatList, Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+  Pressable
 } from 'react-native-gesture-handler';
 import Animated, {
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
 
 import { useAlert } from '../context/AlertContext';
@@ -534,7 +534,7 @@ ${inqComment}`;
       { label: 'Horsepower (in BHP)', value: v.horsepower },
       { label: 'Body Type', value: val(i?.body_type || v.body_type_id === 1 ? 'Sports' : 'Sedan') },
       { label: 'Specs', value: val(v.specs || i?.specs) },
-      { label: 'Transmission Type', value: val(i?.transmission || (v.transmission_id === 1 ? 'Automatic' : 'Manual')) },
+      { label: 'Transmission Type', value: val(i?.transmission || (v.transmission_id === 1 ? 'Manual' : (v.transmission_id === 2 ? 'Automatic' : (v.transmission_id === 3 ? 'CVT' : null)))) },
       { label: 'Color', value: val(i?.color || v.color), media: getFieldMedia('color') },
       { label: 'Service History', value: val(i?.serviceHistory) },
       { label: 'No. of Keys', value: val(i?.noOfKeys) },

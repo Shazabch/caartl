@@ -743,7 +743,7 @@ export default function LiveCarAuctionScreen() {
       { label: 'Horsepower (in BHP)', value: v.horsepower },
       { label: 'Body Type', value: val(i?.body_type || v.body_type_id === 1 ? 'Sports' : 'Sedan') },
       { label: 'Specs', value: val(v.specs || i?.specs) },
-      { label: 'Transmission Type', value: val(i?.transmission || (v.transmission_id === 1 ? 'Automatic' : 'Manual')) },
+      { label: 'Transmission Type', value: val(i?.transmission || (v.transmission_id === 1 ? 'Manual' : (v.transmission_id === 2 ? 'Automatic' : (v.transmission_id === 3 ? 'CVT' : null)))) },
       { label: 'Color', value: val(i?.color || v.color), media: getFieldMedia('color') },
       { label: 'Service History', value: val(i?.serviceHistory) },
       { label: 'No. of Keys', value: val(i?.noOfKeys) },

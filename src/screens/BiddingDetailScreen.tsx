@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    Image,
-    TouchableOpacity,
-    ActivityIndicator,
-    Dimensions,
-} from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Dimensions,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAlert } from '../context/AlertContext';
+import * as Models from '../data/modal';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import apiService from '../services/ApiService';
-import * as Models from '../data/modal';
-import { useAlert } from '../context/AlertContext';
 
 type BiddingDetailRouteProp = RouteProp<RootStackParamList, 'BiddingDetail'>;
 type BiddingDetailNavProp = NativeStackNavigationProp<RootStackParamList, 'BiddingDetail'>;
@@ -168,7 +168,7 @@ export default function BiddingDetailScreen() {
                             <Text style={styles.vehicleSub}>
                                 {vehicle.mileage ? `${vehicle.mileage} km | ` : ''}
                                 {vehicle.register_emirates || 'GCC Specs'} |
-                                {vehicle.transmission_id === 1 ? ' Auto' : ' Manual'}
+                                {vehicle.transmission_id === 1 ? ' Manual' : vehicle.transmission_id === 2 ? ' Auto' : vehicle.transmission_id === 3 ? ' CVT' : ''}
                             </Text>
                         </View>
                     )}

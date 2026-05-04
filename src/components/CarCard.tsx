@@ -107,7 +107,7 @@ export const CarCard: React.FC<CarCardProps> = ({
     rightPriceValue = car.price ? Number(car.price).toLocaleString() : Number(car.starting_bid_amount).toLocaleString();
   }
 
-  const transmission = car.transmission_id === 1 ? 'Automatic' : (car.transmission_id === 2 ? 'Manual' : null);
+  const transmission = car.transmission_id === 1 ? 'Manual' : (car.transmission_id === 2 ? 'Automatic' : (car.transmission_id === 3 ? 'CVT' : null));
 
   let imageUrl = 'https://c.animaapp.com/mg9397aqkN2Sch/img/tesla.png';
   if (car.cover_image) {
