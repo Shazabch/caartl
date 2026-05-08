@@ -662,7 +662,7 @@ ${inqComment}`;
           {/* Index 0: Top Wrapper */}
           <View>
             {/* BANNER SLIDER WITH OVERLAY */}
-            <View style={{ height: 250, marginBottom: 15 }}>
+            <View style={{ height: 320, marginBottom: 15 }}>
               <ScrollView
                 horizontal
                 pagingEnabled
@@ -674,7 +674,7 @@ ${inqComment}`;
               >
                 {imageList.map((img, index) => (
                   <TouchableOpacity key={index} onPress={() => handleImageOpen(imageList, index, false)}>
-                    <Image source={{ uri: img }} style={{ width: width, height: 250, resizeMode: 'cover' }} />
+                    <Image source={{ uri: img }} style={{ width: width, height: 320, resizeMode: 'cover' }} />
                   </TouchableOpacity>
                 ))}
               </ScrollView>

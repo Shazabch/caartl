@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import {
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import * as Models from '../data/modal';
 import { parseAuctionDateInDubai } from '../lib/dubaiTime';
+import { useAuth } from '../context/AuthContext';
 
 interface CarCardProps {
   car: Models.Vehicle;
@@ -30,6 +31,7 @@ export const CarCard: React.FC<CarCardProps> = ({
   hideBadges = false,
   hidePrice = false,
 }) => {
+  const { user } = useAuth();
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
@@ -106,6 +108,8 @@ export const CarCard: React.FC<CarCardProps> = ({
     rightPriceLabel = 'Offer Price';
     rightPriceValue = car.price ? Number(car.price).toLocaleString() : Number(car.starting_bid_amount).toLocaleString();
   }
+
+  const isMyBidHighest = car.latest_bid?.user_id === user?.id;
 
   const transmission = car.transmission_id === 1 ? 'Manual' : (car.transmission_id === 2 ? 'Automatic' : (car.transmission_id === 3 ? 'CVT' : null));
 
@@ -184,7 +188,10 @@ export const CarCard: React.FC<CarCardProps> = ({
                         <View style={styles.priceBadge}>
                           <Text style={styles.priceBadgeText}>{leftPriceLabel}</Text>
                         </View>
-                        <Text style={styles.priceValue}>AED {leftPriceValue}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Text style={[styles.priceValue, (isMyBidHighest && leftPriceLabel === 'Current Bid') && { color: '#2ecc71' }]}>AED {leftPriceValue}</Text>
+                          {(isMyBidHighest && leftPriceLabel === 'Current Bid') && <Feather name="arrow-up" size={12} color="#2ecc71" style={{ marginLeft: 2 }} />}
+                        </View>
                       </View>
                       <View style={styles.divider} />
                     </>

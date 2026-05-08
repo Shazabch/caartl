@@ -94,7 +94,11 @@ export default function BiddingDetailScreen() {
         } else {
             // If not booked -> Go to Book Car
             if (vehicle) {
-                navigation.navigate('BookCar', { vehicle });
+                const bookingVehicle = { ...vehicle };
+                if (acceptedBid) {
+                    bookingVehicle.current_bid = acceptedBid.bid_amount;
+                }
+                navigation.navigate('BookCar', { vehicle: bookingVehicle });
             } else {
                 showAlert("Error", "Vehicle details missing.");
             }
@@ -198,7 +202,12 @@ export default function BiddingDetailScreen() {
                     <View style={[styles.footer, { paddingBottom: 12 }]}>
                         <View style={styles.footerRow}>
                             <Text style={styles.footerLabel}>ACCEPTED OFFER</Text>
-                            <Text style={styles.footerPrice}>AED {Number(acceptedBid.bid_amount).toLocaleString()}</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Text style={[styles.footerPrice, { color: '#2ecc71' }]}>
+                                    AED {Number(acceptedBid.bid_amount).toLocaleString()}
+                                </Text>
+                                <Feather name="arrow-up" size={16} color="#2ecc71" style={{ marginLeft: 6 }} />
+                            </View>
                         </View>
 
                         {/* 🟢 CONDITIONAL BUTTON */}

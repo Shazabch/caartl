@@ -315,7 +315,7 @@ export default function LiveCarAuctionScreen() {
   const viewType = route.params?.viewType || 'live';
 
   const { showAlert } = useAlert();
-  const { isGuest, isUnapproved } = useAuth();
+  const { isGuest, isUnapproved, user } = useAuth();
   const [showLoginAlert, setShowLoginAlert] = useState(false);
   const [showApprovalAlert, setShowApprovalAlert] = useState(false);
 
@@ -653,7 +653,11 @@ export default function LiveCarAuctionScreen() {
 
   const handleBookNow = () => {
     if (fullData?.vehicle) {
-      navigation.navigate('BookCar', { vehicle: fullData.vehicle });
+      const bookingVehicle = { ...fullData.vehicle };
+      if (viewType === 'negotiation' && negotiationBid) {
+        bookingVehicle.current_bid = negotiationBid.bid_amount;
+      }
+      navigation.navigate('BookCar', { vehicle: bookingVehicle });
     } else {
       showAlert("Error", "Vehicle data not available for booking.");
     }
@@ -892,6 +896,13 @@ export default function LiveCarAuctionScreen() {
     }
   }, [bannerSlideWidth, imageList.length, updateBannerLoadWindow]);
 
+  const isMyBidHighest = useMemo(() => {
+    if (viewType === 'negotiation' && negotiationBid) return true;
+    if (!biddingData?.bids || biddingData.bids.length === 0) return false;
+    // The first bid in the sorted list is the highest
+    return biddingData.bids[0].user_id === user?.id;
+  }, [biddingData, negotiationBid, user, viewType]);
+
   if (loading || !fullData?.vehicle) {
     return <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#cadb2a" /></View>;
   }
@@ -926,8 +937,13 @@ export default function LiveCarAuctionScreen() {
                 <Text style={styles.offerValue}>AED {sellerExpectation.toLocaleString()}</Text>
               </View>
               <View style={styles.offerItem}>
-                <Text style={styles.offerLabel}>My Bid (Highest)</Text>
-                <Text style={[styles.offerValue, { color: '#cadb2a' }]}>AED {currentPrice.toLocaleString()}</Text>
+                <Text style={styles.offerLabel}>{viewType === 'negotiation' ? 'My Bid (Highest)' : 'Highest Bid'}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={[styles.offerValue, { color: isMyBidHighest ? '#2ecc71' : '#cadb2a' }]}>
+                    AED {currentPrice.toLocaleString()}
+                  </Text>
+                  {isMyBidHighest && <Feather name="arrow-up" size={14} color="#2ecc71" style={{ marginLeft: 4 }} />}
+                </View>
               </View>
             </View>
             <Feather name="clock" size={40} color="#ffaa00" style={{ marginBottom: 10 }} />
@@ -946,7 +962,12 @@ export default function LiveCarAuctionScreen() {
               </View>
               <View style={styles.offerItem}>
                 <Text style={styles.offerLabel}>My Bid (Highest)</Text>
-                <Text style={[styles.offerValue, { color: '#cadb2a' }]}>AED {currentPrice.toLocaleString()}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={[styles.offerValue, { color: isMyBidHighest ? '#2ecc71' : '#cadb2a' }]}>
+                    AED {currentPrice.toLocaleString()}
+                  </Text>
+                  {isMyBidHighest && <Feather name="arrow-up" size={14} color="#2ecc71" style={{ marginLeft: 4 }} />}
+                </View>
               </View>
             </View>
             <MaterialCommunityIcons name="truck-delivery" size={40} color="#00a8ff" style={{ marginBottom: 10 }} />
@@ -965,7 +986,12 @@ export default function LiveCarAuctionScreen() {
               </View>
               <View style={styles.offerItem}>
                 <Text style={styles.offerLabel}>My Bid</Text>
-                <Text style={[styles.offerValue, { color: '#cadb2a' }]}>AED {currentPrice.toLocaleString()}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={[styles.offerValue, { color: isMyBidHighest ? '#2ecc71' : '#cadb2a' }]}>
+                    AED {currentPrice.toLocaleString()}
+                  </Text>
+                  {isMyBidHighest && <Feather name="arrow-up" size={14} color="#2ecc71" style={{ marginLeft: 4 }} />}
+                </View>
               </View>
             </View>
             <Feather name="check-circle" size={40} color="#cadb2a" style={{ marginBottom: 10 }} />
@@ -1005,7 +1031,12 @@ export default function LiveCarAuctionScreen() {
             </View>
             <View style={styles.offerItem}>
               <Text style={styles.offerLabel}>My Bid (Highest)</Text>
-              <Text style={[styles.offerValue, { color: '#cadb2a' }]}>AED {currentPrice.toLocaleString()}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={[styles.offerValue, { color: isMyBidHighest ? '#2ecc71' : '#cadb2a' }]}>
+                  AED {currentPrice.toLocaleString()}
+                </Text>
+                {isMyBidHighest && <Feather name="arrow-up" size={14} color="#2ecc71" style={{ marginLeft: 4 }} />}
+              </View>
             </View>
           </View>
           <Text style={styles.finalPriceText}>AED {currentPrice.toLocaleString()}</Text>
@@ -1053,7 +1084,7 @@ export default function LiveCarAuctionScreen() {
 
             {/* Banner Slider */}
             <View
-              style={{ height: 250, marginBottom: 15 }}
+              style={{ height: 320, marginBottom: 15 }}
               onLayout={(e) => {
                 const measured = e.nativeEvent.layout.width;
                 if (measured > 0 && measured !== bannerSlideWidth) {
@@ -1072,7 +1103,6 @@ export default function LiveCarAuctionScreen() {
               >
                 {imageList.map((img, index) => (
                   <TouchableOpacity key={index} onPress={() => handleImageOpen(imageList, index, false)}>
-                    {index < loadedBannerCount ? (
                       <Image source={{ uri: img }} style={[styles.bannerImage, { width: bannerSlideWidth }]} />
                     ) : (
                       <View style={[styles.bannerImagePlaceholder, { width: bannerSlideWidth }]}>
@@ -1095,7 +1125,10 @@ export default function LiveCarAuctionScreen() {
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <View style={{ alignItems: 'flex-end' }}>
                         <Text style={[styles.bannerPriceLabel, { textAlign: 'right' }]}>Highest / Current</Text>
-                        <Text style={styles.bannerPriceValue}>AED {currentPrice.toLocaleString()}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Text style={[styles.bannerPriceValue, { color: isMyBidHighest ? '#2ecc71' : '#fff' }]}>AED {currentPrice.toLocaleString()}</Text>
+                          {isMyBidHighest && <Feather name="arrow-up" size={14} color="#2ecc71" style={{ marginLeft: 4 }} />}
+                        </View>
                       </View>
                       <View style={[styles.bannerDivider, { marginHorizontal: 10, height: 25 }]} />
                       <View style={{ alignItems: 'flex-end' }}>
@@ -1360,9 +1393,12 @@ export default function LiveCarAuctionScreen() {
                 <Text style={styles.stickyPriceLabel}>Seller Expectation</Text>
                 <Text style={styles.stickyPriceValue}>AED {sellerExpectation.toLocaleString()}</Text>
               </View>
-              <View style={[styles.stickyPriceBox, styles.stickyPriceBoxHighlight]}>
+              <View style={[styles.stickyPriceBox, styles.stickyPriceBoxHighlight, isMyBidHighest && { borderColor: '#2ecc71' }]}>
                 <Text style={styles.stickyPriceLabel}>Current Bid</Text>
-                <Text style={[styles.stickyPriceValue, { color: '#cadb2a' }]}>AED {currentPrice.toLocaleString()}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={[styles.stickyPriceValue, { color: isMyBidHighest ? '#2ecc71' : '#cadb2a' }]}>AED {currentPrice.toLocaleString()}</Text>
+                  {isMyBidHighest && <Feather name="arrow-up" size={14} color="#2ecc71" style={{ marginLeft: 4 }} />}
+                </View>
               </View>
             </View>
 
@@ -1537,8 +1573,8 @@ const styles = StyleSheet.create({
   leadingText: { color: '#ccc', fontSize: 14, fontFamily: 'Poppins', fontWeight: '500' },
   smallTimerBadge: { backgroundColor: '#cadb2a', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 },
   smallTimerText: { color: '#000', fontWeight: 'bold', fontSize: 14 },
-  bannerImage: { height: 250, resizeMode: 'cover' },
-  bannerImagePlaceholder: { height: 250, backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' },
+  bannerImage: { height: 320, resizeMode: 'cover' },
+  bannerImagePlaceholder: { height: 320, backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' },
 
   imageOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 15, paddingTop: 60, justifyContent: 'flex-end' },
   bannerContent: { flexDirection: 'column', gap: 4, marginBottom: 12 },
