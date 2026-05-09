@@ -105,7 +105,7 @@ export const CarCard: React.FC<CarCardProps> = ({
   }
   else if (variant === 'listed') {
     showLeftPrice = false;
-    rightPriceLabel = 'Offer Price';
+    rightPriceLabel = 'Asking Price';
     rightPriceValue = car.price ? Number(car.price).toLocaleString() : Number(car.starting_bid_amount).toLocaleString();
   }
 
