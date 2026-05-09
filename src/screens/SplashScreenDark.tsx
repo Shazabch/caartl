@@ -18,12 +18,10 @@ export const SplashScreenDark = () => {
   const fadeAnim1 = useRef(new Animated.Value(0)).current;
   const fadeAnim2 = useRef(new Animated.Value(0)).current;
   const fadeAnim3 = useRef(new Animated.Value(0)).current;
-  const fadeAnim4 = useRef(new Animated.Value(0)).current;
   const fadeAnim5 = useRef(new Animated.Value(0)).current;
   const translateY1 = useRef(new Animated.Value(-10)).current;
   const translateY2 = useRef(new Animated.Value(-10)).current;
   const translateY3 = useRef(new Animated.Value(-10)).current;
-  const translateY4 = useRef(new Animated.Value(-10)).current;
   const translateY5 = useRef(new Animated.Value(-10)).current;
 
   useEffect(() => {
@@ -48,8 +46,7 @@ export const SplashScreenDark = () => {
       createAnimation(fadeAnim1, translateY1, 200),
       createAnimation(fadeAnim2, translateY2, 400),
       createAnimation(fadeAnim3, translateY3, 600),
-      createAnimation(fadeAnim4, translateY4, 800),
-      createAnimation(fadeAnim5, translateY5, 1000),
+      createAnimation(fadeAnim5, translateY5, 800),
     ]).start();
   }, []);
 
@@ -75,9 +72,6 @@ export const SplashScreenDark = () => {
         {'Buy. Sell. Auction.\nLuxury & Sports Cars'}
       </Animated.Text>
 
-      <Animated.Text style={[styles.description, { opacity: fadeAnim4, transform: [{ translateY: translateY4 }] }]}>
-        {'Lorem ipsum dolor sit amet, consectetur\nadipiscing elit 1.'}
-      </Animated.Text>
 
       <Animated.View style={[styles.buttonContainer, { opacity: fadeAnim5, transform: [{ translateY: translateY5 }] }]}>
         <TouchableOpacity style={styles.button} activeOpacity={0.8} onPress={handleManualNavigation}>
@@ -97,7 +91,6 @@ const styles = StyleSheet.create({
   carImage: { width: '100%', height: '100%' },
   carOverlay: { position: 'absolute', bottom: 0, left: SCREEN_WIDTH * 0.42, width: SCREEN_WIDTH * 0.234, height: SCREEN_HEIGHT * 0.032 },
   heading: { position: 'absolute', top: SCREEN_HEIGHT * 0.678, left: SCREEN_WIDTH * 0.089, fontFamily: Platform.OS === 'ios' ? 'Helvetica' : 'sans-serif', fontWeight: '400', color: '#ffffff', fontSize: SCREEN_WIDTH * 0.075, lineHeight: SCREEN_WIDTH * 0.088 },
-  description: { position: 'absolute', top: SCREEN_HEIGHT * 0.778, left: SCREEN_WIDTH * 0.109, fontFamily: Platform.OS === 'ios' ? 'Helvetica' : 'sans-serif', fontWeight: '400', color: '#ffffff', fontSize: SCREEN_WIDTH * 0.041, lineHeight: SCREEN_WIDTH * 0.057 },
   buttonContainer: { position: 'absolute', top: SCREEN_HEIGHT * 0.867, left: SCREEN_WIDTH * 0.1, width: SCREEN_WIDTH * 0.798, height: SCREEN_HEIGHT * 0.073 },
   button: { width: '100%', height: '100%', backgroundColor: '#000000', borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
   buttonText: { fontFamily: Platform.OS === 'ios' ? 'Helvetica' : 'sans-serif', fontWeight: '700', color: '#ffffff', fontSize: SCREEN_WIDTH * 0.045 },
